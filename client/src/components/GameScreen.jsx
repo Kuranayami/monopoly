@@ -314,75 +314,77 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 
   if (game.status === 'waiting') {
     return (
-      <View style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <View style={{
-          width: isMobile ? '92%' : 400,
-          background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
-          borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)',
-          padding: 32, animation: 'fade-in-up 0.5s ease',
-        }}>
-          <Text style={{ fontSize: 24, fontWeight: 800, textAlign: 'center', color: '#fbbf24', marginBottom: 4 }}>
-            Room: {game.roomCode}
-          </Text>
-          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 20 }}>
-            Waiting for players... {game.players.length}/6
-          </Text>
-          <View style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-            {game.players.map(p => (
-              <View key={p.id} style={{
-                padding: '10px 14px', borderRadius: 12,
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
-                display: 'flex', justifyContent: 'space-between',
-              }}>
-                <Text style={{ fontSize: 14, color: '#fff', fontWeight: 600 }}>{p.name}</Text>
-                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{p.token}</Text>
-              </View>
-            ))}
-          </View>
-          {game.hostName === player?.name && game.players.length >= 2 && (
-            <Button onPress={handleHostStart}
-              style={{
-                width: '100%', padding: '14px', borderRadius: 14, fontSize: 16, fontWeight: 700,
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
-                color: '#060612', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
-                animation: 'pulse-glow 2s infinite',
-              }}>
-              Start Game
-            </Button>
-          )}
-          <Button onPress={handleLeaveClick}
-            style={{
-              width: '100%', padding: '10px', borderRadius: 12, fontSize: 13,
-              background: 'transparent', color: 'rgba(255,255,255,0.4)', marginTop: 8,
-            }}>
-            Leave Room
-          </Button>
-        </View>
-      </View>
-      {leaveConfirm && (
-        <Overlay>
+      <>
+        <View style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <View style={{
-            background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
-            borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
-            padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
+            width: isMobile ? '92%' : 400,
+            background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
+            borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)',
+            padding: 32, animation: 'fade-in-up 0.5s ease',
           }}>
-            <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
-            <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
-              <Button onPress={handleLeaveConfirm}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
-                Leave
-              </Button>
-              <Button onPress={handleLeaveCancel}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
-                Cancel
-              </Button>
+            <Text style={{ fontSize: 24, fontWeight: 800, textAlign: 'center', color: '#fbbf24', marginBottom: 4 }}>
+              Room: {game.roomCode}
+            </Text>
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 20 }}>
+              Waiting for players... {game.players.length}/6
+            </Text>
+            <View style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+              {game.players.map(p => (
+                <View key={p.id} style={{
+                  padding: '10px 14px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex', justifyContent: 'space-between',
+                }}>
+                  <Text style={{ fontSize: 14, color: '#fff', fontWeight: 600 }}>{p.name}</Text>
+                  <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{p.token}</Text>
+                </View>
+              ))}
             </View>
+            {game.hostName === player?.name && game.players.length >= 2 && (
+              <Button onPress={handleHostStart}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: 14, fontSize: 16, fontWeight: 700,
+                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
+                  color: '#060612', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+                  animation: 'pulse-glow 2s infinite',
+                }}>
+                Start Game
+              </Button>
+            )}
+            <Button onPress={handleLeaveClick}
+              style={{
+                width: '100%', padding: '10px', borderRadius: 12, fontSize: 13,
+                background: 'transparent', color: 'rgba(255,255,255,0.4)', marginTop: 8,
+              }}>
+              Leave Room
+            </Button>
           </View>
-        </Overlay>
-      )}
-    </View>
-  );
+        </View>
+        {leaveConfirm && (
+          <Overlay>
+            <View style={{
+              background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+              borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
+              padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
+            }}>
+              <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
+              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
+              <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+                <Button onPress={handleLeaveConfirm}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+                  Leave
+                </Button>
+                <Button onPress={handleLeaveCancel}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                  Cancel
+                </Button>
+              </View>
+            </View>
+          </Overlay>
+        )}
+      </>
+    );
+  }
 
   if (game.status === 'finished') {
     return (
