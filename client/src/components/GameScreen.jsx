@@ -157,10 +157,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 
   const handlePayRent = useCallback(() => {
     setRentModal(null);
-    socket?.emit('pay_rent', (res) => {
-      if (res?.bankrupt) showNotif('You went bankrupt!');
-    });
-  }, [socket, showNotif]);
+    socket?.emit('pay_rent');
+  }, [socket]);
 
   const handlePayTax = useCallback(() => {
     setRentModal(null);
@@ -361,8 +359,30 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           </Button>
         </View>
       </View>
-    );
-  }
+      {leaveConfirm && (
+        <Overlay>
+          <View style={{
+            background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+            borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
+            padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
+            <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+              <Button onPress={handleLeaveConfirm}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+                Leave
+              </Button>
+              <Button onPress={handleLeaveCancel}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </Overlay>
+      )}
+    </View>
+  );
 
   if (game.status === 'finished') {
     return (
