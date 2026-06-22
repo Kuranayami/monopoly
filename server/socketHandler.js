@@ -355,6 +355,7 @@ export default function socketHandler(io) {
         }
 
         // Reset paidRent flag for next player's turn
+        player.consecutiveDoubles = 0;
         player.paidRentThisTurn = false;
         game.canRollAgain = false;
         game.turnPhase = 'pre_roll';
@@ -850,6 +851,8 @@ export default function socketHandler(io) {
           game.currentTurn = nextIdx;
           game.turnPhase = 'pre_roll';
           game.canRollAgain = false;
+          game.dice = [];
+          game.lastDiceTotal = null;
           game.players.forEach(p => { p.paidRentThisTurn = false; });
           game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
         }
@@ -857,6 +860,7 @@ export default function socketHandler(io) {
           players: game.players, lastAction: game.lastAction, status: game.status,
           winner: game.winner, finishedAt: game.finishedAt,
           currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false,
+          dice: game.dice, lastDiceTotal: game.lastDiceTotal,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
