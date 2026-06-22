@@ -419,7 +419,7 @@ export default function socketHandler(io) {
         game.auction = { spaceId, currentBid: 0, currentBidder: null, bidders: {}, timerEnd: Date.now() + 8000 };
         game.lastAction = `Auction started for ${space.name}!`;
         await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
-        io.to(currentRoom).emit('auction_started', { spaceId });
+        io.to(currentRoom).emit('auction_started', { ...game.auction });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         typeof callback === 'function' && callback({ success: true });
         const timer = setTimeout(async () => {

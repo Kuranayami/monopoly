@@ -49,8 +49,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     const onTradeProposal = ({ fromId, fromName, offer, request }) => {
       setTradeProposal({ fromId, fromName, offer, request });
     };
-    const onAuctionStarted = ({ spaceId }) => {
-      setAuctionModal({ spaceId });
+    const onAuctionStarted = (data) => {
+      setAuctionModal(data);
     };
     const onAuctionUpdated = (auctionState) => {
       setAuctionModal(prev => prev ? { ...prev, ...auctionState } : prev);
