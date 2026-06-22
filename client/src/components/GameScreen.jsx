@@ -58,7 +58,11 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     const onAuctionEnded = () => {
       setAuctionModal(null);
     };
+    const onTaxDue = ({ amount }) => {
+      setRentModal({ amount, isTax: true });
+    };
 
+    socket.on('tax_due', onTaxDue);
     socket.on('rent_due', onRentDue);
     socket.on('property_available', onPropertyAvailable);
     socket.on('card_drawn', onCardDrawn);
@@ -68,6 +72,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     socket.on('auction_ended', onAuctionEnded);
 
     return () => {
+      socket.off('tax_due', onTaxDue);
       socket.off('rent_due', onRentDue);
       socket.off('property_available', onPropertyAvailable);
       socket.off('card_drawn', onCardDrawn);
@@ -157,6 +162,11 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     });
   }, [socket, showNotif]);
 
+  const handlePayTax = useCallback(() => {
+    setRentModal(null);
+    socket?.emit('pay_tax');
+  }, [socket]);
+
   const handleBankrupt = useCallback(() => {
     setRentModal(null);
     socket?.emit('declare_bankruptcy');
@@ -197,6 +207,11 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       if (!res?.success) showNotif(res?.error || 'Cannot unmortgage');
     });
   }, [socket, showNotif]);
+
+  const handleOpenBuildings = useCallback(() => {
+    const p = game?.players?.find(p => p.id === playerId);
+    if (p?.properties?.length) setBuildModal({ spaceId: p.properties[0] });
+  }, [game, playerId]);
 
   const handlePayBail = useCallback(() => {
     socket?.emit('pay_jail_bail', (res) => {
@@ -445,7 +460,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {cardModal && <CardModal card={cardModal} onClose={() => setCardModal(null)} />}
         {propModal && <PropertyModal spaceId={propModal.spaceId} onBuy={handleBuyProperty} onAuction={handleAuction} game={game} playerId={playerId} />}
         {auctionModal && <AuctionModal auction={auctionModal} game={game} playerId={playerId} socket={socket} />}
-        {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} onPay={handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} />}
+        {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} amount={rentModal.amount} isTax={rentModal.isTax} onPay={rentModal.isTax ? handlePayTax : handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} onOpenBuildings={handleOpenBuildings} />}
         {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onMortgage={handleMortgage} onUnmortgage={handleUnmortgage} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
         {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
         {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
@@ -531,7 +546,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {cardModal && <CardModal card={cardModal} onClose={() => setCardModal(null)} />}
       {propModal && <PropertyModal spaceId={propModal.spaceId} onBuy={handleBuyProperty} onAuction={handleAuction} game={game} playerId={playerId} />}
       {auctionModal && <AuctionModal auction={auctionModal} game={game} playerId={playerId} socket={socket} />}
-      {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} onPay={handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} />}
+      {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} amount={rentModal.amount} isTax={rentModal.isTax} onPay={rentModal.isTax ? handlePayTax : handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} onOpenBuildings={handleOpenBuildings} />}
       {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onMortgage={handleMortgage} onUnmortgage={handleUnmortgage} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
       {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
       {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}

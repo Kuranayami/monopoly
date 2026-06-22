@@ -83,11 +83,21 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
 
 export function AuctionModal({ auction, game, playerId, socket }) {
   const [bidInput, setBidInput] = useState('');
+  const [timer, setTimer] = useState(3);
   if (!auction || auction.spaceId === null || auction.spaceId === undefined) return null;
   const space = SPACES[auction.spaceId];
   const player = game?.players?.find(p => p.id === playerId);
   const myBid = auction.bidders?.[playerId] || 0;
   const canBid = player && parseInt(bidInput) > auction.currentBid && parseInt(bidInput) <= player.cash;
+  const skipVoted = auction.skipVotes?.includes(playerId);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((auction.timerEnd - Date.now()) / 1000));
+      setTimer(remaining);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [auction.timerEnd]);
 
   const placeBid = () => {
     const amount = parseInt(bidInput);
@@ -97,8 +107,8 @@ export function AuctionModal({ auction, game, playerId, socket }) {
     setBidInput('');
   };
 
-  const endAuction = () => {
-    socket?.emit('end_auction');
+  const voteSkip = () => {
+    socket?.emit('auction_skip_vote');
   };
 
   const highestBidder = auction.currentBidder
@@ -116,8 +126,12 @@ export function AuctionModal({ auction, game, playerId, socket }) {
       }}>
         <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Auction</Text>
         <Text style={{ fontSize: 14, color: '#fbbf24', marginBottom: 4 }}>{space?.name}</Text>
-        <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>
+        <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
           Starting price: ${space?.price || 0}
+        </Text>
+
+        <Text style={{ fontSize: 20, fontWeight: 700, color: timer <= 1 ? '#ef4444' : '#fbbf24', textAlign: 'center', marginBottom: 12 }}>
+          {timer > 0 ? `${timer}s` : 'Time\'s up!'}
         </Text>
 
         <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
@@ -155,23 +169,25 @@ export function AuctionModal({ auction, game, playerId, socket }) {
           Your cash: ${player?.cash || 0} • Your bid: ${myBid}
         </Text>
 
-        <Button onPress={endAuction}
+        <Button onPress={voteSkip}
           style={{
             width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-            background: 'rgba(255,255,255,0.06)', color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: skipVoted ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
+            color: skipVoted ? '#22c55e' : '#fff',
+            border: skipVoted ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.1)',
           }}>
-          Close Auction
+          {skipVoted ? 'Voted to Skip' : 'Vote to Skip'}
         </Button>
       </View>
     </Overlay>
   );
 }
 
-export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId }) {
+export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, isTax, amount, onOpenBuildings }) {
+  const payAmount = amount || rent;
   const space = SPACES[spaceId];
   const player = game?.players?.find(p => p.id === playerId);
-  if (!space || !player) return null;
+  if (!player) return null;
 
   return (
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
@@ -181,12 +197,16 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId }) 
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 32, maxWidth: 360, width: '90%',
       }}>
-        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Rent Due!</Text>
-        <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>
-          {space.name}
+        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+          {isTax ? 'Tax Due!' : 'Rent Due!'}
         </Text>
+        {space && (
+          <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>
+            {space.name}
+          </Text>
+        )}
         <Text style={{ fontSize: 24, fontWeight: 800, color: '#ef4444', marginBottom: 16 }}>
-          ${rent}
+          ${payAmount}
         </Text>
         <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
           Your cash: ${player.cash}
@@ -197,8 +217,18 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId }) 
               width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
               background: GOLD, color: '#060612',
             }}>
-            {player.cash >= rent ? `Pay $${rent}` : 'Pay (Will go negative)'}
+            {player.cash >= payAmount ? `Pay $${payAmount}` : 'Pay (Will go negative)'}
           </Button>
+          {onOpenBuildings && (
+            <Button onPress={onOpenBuildings}
+              style={{
+                width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                background: 'rgba(59,130,246,0.15)', color: '#3b82f6',
+                border: '1px solid rgba(59,130,246,0.3)',
+              }}>
+              Mortgage / Sell
+            </Button>
+          )}
           <Button onPress={onBankrupt}
             style={{
               width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
