@@ -70,7 +70,8 @@ export default function App() {
     setLeftGame(true);
     setGame(null);
     setScreen('lobby');
-  }, []);
+    socket?.emit('leave_room');
+  }, [socket]);
 
   return (
     <View style={{ width: '100%', height: '100dvh', background: 'linear-gradient(145deg, #060612, #0f0f28, #14143a, #0a0a1e)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>

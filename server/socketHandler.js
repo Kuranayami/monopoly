@@ -142,6 +142,30 @@ export default function socketHandler(io) {
       }
     });
 
+    socket.on('leave_room', async (_, callback) => {
+      try {
+        const game = await getGame(currentRoom);
+        if (!game) return typeof callback === 'function' && callback({ success: false, error: 'Game not found' });
+        const idx = game.players.findIndex(p => p.id === currentPlayerId);
+        if (idx === -1) return typeof callback === 'function' && callback({ success: false, error: 'Player not found' });
+        game.players.splice(idx, 1);
+        if (game.players.length === 0) {
+          await deleteGame(currentRoom);
+          return typeof callback === 'function' && callback({ success: true });
+        }
+        const leavingPlayer = game.players.find(p => p.id === currentPlayerId);
+        if (leavingPlayer && game.hostName === leavingPlayer.name) {
+          game.hostName = game.players[0].name;
+          game.lastAction = `${game.hostName} is now host`;
+        }
+        await updateGame(game.roomCode, { players: game.players, hostName: game.hostName, lastAction: game.lastAction });
+        io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        typeof callback === 'function' && callback({ success: true });
+      } catch (err) {
+        typeof callback === 'function' && callback({ success: false, error: err.message });
+      }
+    });
+
     socket.on('start_game', async (_, callback) => {
       try {
         const game = await getGame(currentRoom);
