@@ -104,8 +104,16 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   }, [isMyTurn, phase, socket, showNotif]);
 
   const handleEndTurn = useCallback(() => {
-    socket?.emit('end_turn');
-  }, [socket]);
+    socket?.emit('end_turn', (res) => {
+      if (res?.rollAgain) {
+        setRolling(true);
+        setTimeout(() => setRolling(false), 500);
+        socket?.emit('roll_dice', (res2) => {
+          if (!res2?.success) showNotif(res2?.error || 'Roll failed');
+        });
+      }
+    });
+  }, [socket, showNotif]);
 
   const handleAcceptTrade = useCallback(() => {
     if (!tradeProposal) return;
@@ -249,7 +257,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           )}
         </>
       )}
-      {isMyTurn && phase === 'post_roll' && !landedOnCard && (
+      {isMyTurn && phase === 'post_roll' && !landedOnCard && !game?.canRollAgain && (
         <Button onPress={handleEndTurn}
           style={{
             padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 700,
@@ -257,6 +265,17 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             color: '#060612', boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
           }}>
           End Turn
+        </Button>
+      )}
+      {isMyTurn && phase === 'post_roll' && !landedOnCard && game?.canRollAgain && (
+        <Button onPress={handleEndTurn}
+          style={{
+            padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+            background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
+            color: '#060612', boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
+            animation: 'pulse-glow 2s infinite',
+          }}>
+          Roll Again
         </Button>
       )}
       {isMyTurn && phase === 'post_roll' && landedOnCard && (
@@ -423,7 +442,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} onPay={handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} />}
         {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
         {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
-        {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
+        {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
         {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
         {leaveConfirm && (
           <Overlay>
@@ -509,7 +528,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} onPay={handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} />}
       {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
       {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
-      {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
+      {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
       {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
       {leaveConfirm && (
         <Overlay>

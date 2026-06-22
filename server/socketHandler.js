@@ -57,6 +57,7 @@ export default function socketHandler(io) {
             socketId: socket.id,
             turnOrder: 0,
           }],
+          canRollAgain: false,
           currentTurn: 0,
           turnPhase: 'pre_roll',
           status: 'waiting',
@@ -175,12 +176,14 @@ export default function socketHandler(io) {
         game.status = 'playing';
         game.startedAt = new Date();
         game.turnPhase = 'pre_roll';
+        game.canRollAgain = false;
         game.lastAction = `Game started! ${game.players[0].name}'s turn`;
         await updateGame(game.roomCode, {
           players: game.players,
           status: game.status,
           startedAt: game.startedAt,
           turnPhase: game.turnPhase,
+          canRollAgain: false,
           lastAction: game.lastAction,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -251,9 +254,16 @@ export default function socketHandler(io) {
             player.consecutiveDoubles = 0;
             sendToJail(game, player);
             game.lastAction = `${player.name} rolled 3 consecutive doubles and is sent to jail!`;
+            game.canRollAgain = false;
+            const nextIdx = findNextActivePlayer(game, game.currentTurn);
+            game.currentTurn = nextIdx;
+            game.dice = [];
+            game.turnPhase = 'pre_roll';
+            game.lastDiceTotal = null;
             await updateGame(game.roomCode, {
               players: game.players, dice: game.dice, turnPhase: game.turnPhase,
               lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+              currentTurn: game.currentTurn, canRollAgain: false,
             });
             io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
             return callback({ success: true, double, dice, sentToJail: true, game: await getGame(currentRoom) });
@@ -271,9 +281,15 @@ export default function socketHandler(io) {
         player.position = newPos;
         handleLanding(game, player, diceTotal, io);
 
+        if (double && !player.inJail) {
+          game.canRollAgain = true;
+          game.lastAction += ` Doubles! Roll again.`;
+        }
+
         await updateGame(game.roomCode, {
           players: game.players, dice: game.dice, turnPhase: game.turnPhase,
           lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+          canRollAgain: game.canRollAgain,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, double, dice, game: await getGame(currentRoom) });
@@ -299,15 +315,36 @@ export default function socketHandler(io) {
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
           return callback({ success: false, error: 'Must roll dice first' });
         }
-        // Reset paidRent flag for next turn
+        // Double roll: give extra roll instead of ending turn
+        if (game.canRollAgain) {
+          player.paidRentThisTurn = false;
+          game.canRollAgain = false;
+          game.turnPhase = 'pre_roll';
+          game.dice = [];
+          game.lastAction = `${player.name} gets another roll!`;
+          game.lastDiceTotal = null;
+          await updateGame(game.roomCode, {
+            turnPhase: game.turnPhase, dice: game.dice, lastAction: game.lastAction,
+            lastDiceTotal: game.lastDiceTotal, canRollAgain: false,
+          });
+          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+          return callback({ success: true, rollAgain: true, game: await getGame(currentRoom) });
+        }
+
+        // Reset paidRent flag for next player's turn
         player.paidRentThisTurn = false;
+        game.canRollAgain = false;
         game.turnPhase = 'pre_roll';
         game.dice = [];
         const nextIdx = findNextActivePlayer(game, game.currentTurn);
         game.currentTurn = nextIdx;
         game.lastAction = `${game.players[nextIdx].name}'s turn`;
         game.lastDiceTotal = null;
-        await updateGame(game.roomCode, { currentTurn: game.currentTurn, turnPhase: game.turnPhase, dice: game.dice, lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal });
+        await updateGame(game.roomCode, {
+          currentTurn: game.currentTurn, turnPhase: game.turnPhase, dice: game.dice,
+          lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+          canRollAgain: false,
+        });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -520,8 +557,8 @@ export default function socketHandler(io) {
         if (!player.properties.includes(spaceId)) return callback({ success: false, error: "You don't own this" });
         const space = SPACES[spaceId];
         if (!space) return callback({ success: false, error: 'Invalid space' });
-        if (player.houses?.[spaceId] || player.hotels?.[spaceId]) {
-          return callback({ success: false, error: 'Must sell buildings first' });
+        if (space.type === 'property' && space.group && hasBuildingsInGroup(player, spaceId)) {
+          return callback({ success: false, error: 'Must sell all buildings on this color group first' });
         }
         player.mortgaged = player.mortgaged || [];
         if (player.mortgaged.includes(spaceId)) return callback({ success: false, error: 'Already mortgaged' });
@@ -936,7 +973,7 @@ function calcMortgageInterest(assets, giver, receiver) {
   (assets.properties || []).forEach(pid => {
     const sp = SPACES[pid];
     if (sp && sp.price && giver.mortgaged?.includes(pid)) {
-      total += Math.floor(Math.floor(sp.price / 2) * 0.1);
+      total += Math.ceil(Math.floor(sp.price / 2) * 0.1);
     }
   });
   return total;
@@ -996,7 +1033,7 @@ function execTrade(game, fromPlayer, toPlayer, offer, request) {
     if (sp && sp.price && from.mortgaged?.includes(propId)) {
       from.mortgaged = from.mortgaged.filter(m => m !== propId);
       to.mortgaged = [...(to.mortgaged || []), propId];
-      const interest = Math.floor(Math.floor(sp.price / 2) * 0.1);
+      const interest = Math.ceil(Math.floor(sp.price / 2) * 0.1);
       to.cash -= interest;
       game.lastAction += ` (${sp.name} transferred mortgaged — $${interest} interest paid)`;
     }

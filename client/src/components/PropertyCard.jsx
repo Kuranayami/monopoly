@@ -7,6 +7,7 @@ export default function PropertyCard({ spaceId, player }) {
 
   const houses = player?.houses?.[spaceId] || 0;
   const hasHotel = player?.hotels?.[spaceId] || false;
+  const isMortgaged = player?.mortgaged?.includes(spaceId);
 
   const rentTable = space.type === 'property' ? space.rent : null;
 
@@ -25,6 +26,11 @@ export default function PropertyCard({ spaceId, player }) {
         <Text style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
           {space.name}
         </Text>
+        {isMortgaged && (
+          <Text style={{ fontSize: 11, color: '#ef4444', fontWeight: 600, marginBottom: 4 }}>
+            🔴 Mortgaged
+          </Text>
+        )}
         <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
           {space.group?.replace('_', ' ')} • ${space.price}
         </Text>

@@ -33,6 +33,9 @@ export default function Board({ game, playerId, cellSize = 72 }) {
         const space = SPACES[pos];
         const corner = isCorner(x, y);
         const tokens = getTokens(pos);
+        const owner = game?.players?.find(p => p.properties.includes(pos) && !p.isBankrupt);
+        const houses = owner?.houses?.[pos] || 0;
+        const hasHotel = owner?.hotels?.[pos] || false;
 
         return (
           <View key={pos} style={{
@@ -72,17 +75,22 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                     ${space.price}
                   </Text>
                 )}
-                {(() => {
-                  const owner = game?.players?.find(p => p.properties.includes(pos) && !p.isBankrupt);
-                  return owner ? (
-                    <Text style={{
-                      fontSize: Math.max(6, priceFs - 1), color: 'rgba(255,255,255,0.35)',
-                      textAlign: 'center', lineHeight: 1.1, marginTop: 1,
-                    }}>
-                      {owner.name}
-                    </Text>
-                  ) : null;
-                })()}
+                {owner && (
+                  <Text style={{
+                    fontSize: Math.max(6, priceFs - 1), color: 'rgba(255,255,255,0.35)',
+                    textAlign: 'center', lineHeight: 1.1, marginTop: 1,
+                  }}>
+                    {owner.name}
+                  </Text>
+                )}
+                {(hasHotel || houses > 0) && (
+                  <Text style={{
+                    fontSize: Math.max(8, cellSize * 0.09), lineHeight: 1.2, marginTop: 1,
+                    color: hasHotel ? '#ef4444' : '#fbbf24',
+                  }}>
+                    {hasHotel ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(houses)}
+                  </Text>
+                )}
               </>
             )}
             {corner && space && (

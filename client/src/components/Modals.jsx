@@ -237,7 +237,7 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
         <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{space.name}</Text>
         {canBuild && (
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
-            Houses: {houses} {hasHotel ? '(Hotel)' : ''} • Build Cost: ${space.buildCost}
+            {hasHotel ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(houses || 0)} {hasHotel ? 'Hotel' : `${houses} house${houses !== 1 ? 's' : ''}`} • Build Cost: ${space.buildCost}
           </Text>
         )}
         <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
@@ -364,6 +364,7 @@ export function TradeModal({ game, playerId, socket, onClose }) {
                     }}>
                     {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
                     {s?.name || `Space ${pid}`}
+                    {player?.mortgaged?.includes(pid) && <Text style={{ fontSize: 9, color: '#ef4444' }}> (M)</Text>}
                   </Button>
                 );
               })}
@@ -396,6 +397,7 @@ export function TradeModal({ game, playerId, socket, onClose }) {
             </Text>
             <View style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
               {others.find(p => p.id === targetId)?.properties?.map(pid => {
+                const target = others.find(p => p.id === targetId);
                 const s = SPACES[pid];
                 const selected = request.properties.includes(pid);
                 return (
@@ -409,6 +411,7 @@ export function TradeModal({ game, playerId, socket, onClose }) {
                     }}>
                     {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
                     {s?.name || `Space ${pid}`}
+                    {target?.mortgaged?.includes(pid) && <Text style={{ fontSize: 9, color: '#ef4444' }}> (M)</Text>}
                   </Button>
                 );
               })}
@@ -485,8 +488,7 @@ export function PlayerPropsModal({ game, playerId, onClose, onSelectProp }) {
                 }}>
                 <Text style={{ fontSize: 13, color: '#fff' }}>{s?.name}</Text>
                 <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                  {player.houses?.[pid] ? `${player.houses[pid]}H` : ''}
-                  {player.hotels?.[pid] ? 'Hotel' : ''}
+                  {player.hotels?.[pid] ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(player.houses?.[pid] || 0)}
                 </Text>
               </Button>
             );
@@ -501,18 +503,22 @@ export function PlayerPropsModal({ game, playerId, onClose, onSelectProp }) {
   );
 }
 
-export function TradeProposalModal({ proposal, game, onAccept, onDecline }) {
+export function TradeProposalModal({ proposal, game, playerId, onAccept, onDecline }) {
   if (!proposal) return null;
 
-  const renderAssetList = (assets, label) => (
+  const renderAssetList = (assets, label, ownerId) => {
+    const owner = game?.players?.find(p => p.id === ownerId);
+    return (
     <View style={{ marginBottom: 12 }}>
       <Text style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600, marginBottom: 4 }}>{label}</Text>
       {(assets.properties || []).map(pid => {
         const s = SPACES[pid];
+        const isMortgaged = owner?.mortgaged?.includes(pid);
         return (
           <View key={pid} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
             {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
             <Text style={{ fontSize: 12, color: '#fff' }}>{s?.name || `Space ${pid}`}</Text>
+            {isMortgaged && <Text style={{ fontSize: 10, color: '#ef4444' }}>(M)</Text>}
           </View>
         );
       })}
@@ -522,7 +528,8 @@ export function TradeProposalModal({ proposal, game, onAccept, onDecline }) {
         <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>  Nothing</Text>
       )}
     </View>
-  );
+    );
+  };
 
   return (
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
@@ -536,8 +543,8 @@ export function TradeProposalModal({ proposal, game, onAccept, onDecline }) {
         <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>
           Trade from {proposal.fromName}
         </Text>
-        {renderAssetList(proposal.offer, `${proposal.fromName} gives:`)}
-        {renderAssetList(proposal.request, `${proposal.fromName} requests:`)}
+        {renderAssetList(proposal.offer, `${proposal.fromName} gives:`, proposal.fromId)}
+        {renderAssetList(proposal.request, `${proposal.fromName} requests:`, playerId)}
         <View style={{ display: 'flex', flexDirection: 'row', gap: 8, marginTop: 8 }}>
           <Button onPress={onAccept}
             style={{

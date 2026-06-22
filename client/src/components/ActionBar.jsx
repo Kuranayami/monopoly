@@ -11,11 +11,18 @@ export default function ActionBar({ game, playerId, socket, isMobile }) {
   if (!game || !player) return null;
 
   const canRoll = isMyTurn && phase === 'pre_roll';
-  const canEndTurn = isMyTurn && phase === 'post_roll';
+  const canEndTurn = isMyTurn && phase === 'post_roll' && !game.canRollAgain;
+  const canRollAgain = isMyTurn && phase === 'post_roll' && game.canRollAgain;
   const canBuy = isMyTurn && phase === 'post_roll';
 
   const handleRoll = () => socket?.emit('roll_dice');
-  const handleEndTurn = () => socket?.emit('end_turn');
+  const handleEndTurn = () => {
+    socket?.emit('end_turn', (res) => {
+      if (res?.rollAgain) {
+        socket?.emit('roll_dice');
+      }
+    });
+  };
   const handleBuy = () => socket?.emit('buy_property');
   const handlePayBail = () => socket?.emit('pay_jail_bail');
   const handleUseCard = () => socket?.emit('use_jail_card');
@@ -55,6 +62,11 @@ export default function ActionBar({ game, playerId, socket, isMobile }) {
       {canRoll && !inJail && (
         <Button onPress={handleRoll} style={{ ...goldBtn, animation: 'pulse-glow 2s infinite', fontSize: 15, padding: '12px 32px' }}>
           Roll Dice
+        </Button>
+      )}
+      {canRollAgain && (
+        <Button onPress={handleEndTurn} style={{ ...goldBtn, animation: 'pulse-glow 2s infinite', fontSize: 15, padding: '12px 32px' }}>
+          Roll Again
         </Button>
       )}
       {canEndTurn && (
