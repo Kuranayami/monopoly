@@ -828,10 +828,18 @@ export default function socketHandler(io) {
         game.lastAction = `${player.name} declared bankruptcy!`;
         if (checkGameOver(game)) {
           io.to(currentRoom).emit('game_over', { winner: game.winner });
+        } else {
+          const nextIdx = findNextActivePlayer(game, game.currentTurn);
+          game.currentTurn = nextIdx;
+          game.turnPhase = 'pre_roll';
+          game.canRollAgain = false;
+          game.players.forEach(p => { p.paidRentThisTurn = false; });
+          game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
         }
         await updateGame(game.roomCode, {
           players: game.players, lastAction: game.lastAction, status: game.status,
           winner: game.winner, finishedAt: game.finishedAt,
+          currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
