@@ -172,13 +172,13 @@ export default function socketHandler(io) {
         if (!game) return typeof callback === 'function' && callback({ success: false, error: 'Game not found' });
         const idx = game.players.findIndex(p => p.id === currentPlayerId);
         if (idx === -1) return typeof callback === 'function' && callback({ success: false, error: 'Player not found' });
+        const leavingName = game.players[idx].name;
         game.players.splice(idx, 1);
         if (game.players.length === 0) {
           await deleteGame(currentRoom);
           return typeof callback === 'function' && callback({ success: true });
         }
-        const leavingPlayer = game.players.find(p => p.id === currentPlayerId);
-        if (leavingPlayer && game.hostName === leavingPlayer.name) {
+        if (game.hostName === leavingName) {
           game.hostName = game.players[0].name;
           game.lastAction = `${game.hostName} is now host`;
         }
@@ -997,7 +997,8 @@ function handleBankruptcy(game, player, creditor, debt, io) {
   const assets = calculateAssets(player);
   if (assets >= debt) {
     game.lastAction = `${player.name} must sell/mortgage to pay $${debt}`;
-    io.to(player.socketId).emit('forced_sell', { debt, creditorId: creditor.id });
+    io.to(player.socketId).emit('forced_sell', { debt, creditorId: creditor?.id || null });
+    updateGame(game.roomCode, { lastAction: game.lastAction });
   } else {
     const totalAssets = player.cash + assets;
     if (creditor) creditor.cash += totalAssets;

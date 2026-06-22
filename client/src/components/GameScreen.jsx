@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, Button, Scroller, Overlay } from '../elements.jsx';
 import { useIsMobile, useIsDesktop, useWindowSize } from '../hooks.js';
 import Board from './Board.jsx';
@@ -209,9 +209,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   }, [socket, showNotif]);
 
   const handleOpenBuildings = useCallback(() => {
-    const p = game?.players?.find(p => p.id === playerId);
-    if (p?.properties?.length) setBuildModal({ spaceId: p.properties[0] });
-  }, [game, playerId]);
+    setPropsModal(playerId);
+  }, [playerId]);
 
   const handlePayBail = useCallback(() => {
     socket?.emit('pay_jail_bail', (res) => {

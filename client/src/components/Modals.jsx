@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Button, Input, Overlay, Scroller } from '../elements.jsx';
 import { SPACES, CHANCE, COMMUNITY_CHEST } from 'shared/constants.js';
 
