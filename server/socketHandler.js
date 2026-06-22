@@ -416,7 +416,7 @@ export default function socketHandler(io) {
         }
         const existingTimer = auctionTimers.get(currentRoom);
         if (existingTimer) clearTimeout(existingTimer);
-        game.auction = { spaceId, currentBid: 0, currentBidder: null, bidders: {}, skipVotes: [], timerEnd: Date.now() + 3000 };
+        game.auction = { spaceId, currentBid: 0, currentBidder: null, bidders: {}, skipVotes: [], timerEnd: Date.now() + 5000 };
         game.lastAction = `Auction started for ${space.name}!`;
         await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
         io.to(currentRoom).emit('auction_started', { spaceId });
@@ -450,7 +450,7 @@ export default function socketHandler(io) {
         game.auction.currentBid = amount;
         game.auction.currentBidder = player.id;
         game.auction.bidders[player.id] = amount;
-        game.auction.timerEnd = Date.now() + 3000;
+        game.auction.timerEnd = Date.now() + 5000;
         game.lastAction = `${player.name} bids $${amount} on ${space.name}`;
         await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
         io.to(currentRoom).emit('auction_update', { ...game.auction });
