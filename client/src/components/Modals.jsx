@@ -83,7 +83,7 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
 
 export function AuctionModal({ auction, game, playerId, socket }) {
   const [bidInput, setBidInput] = useState('');
-  const [timer, setTimer] = useState(3);
+  const [timer, setTimer] = useState(5);
   if (!auction || auction.spaceId === null || auction.spaceId === undefined) return null;
   const space = SPACES[auction.spaceId];
   const player = game?.players?.find(p => p.id === playerId);
