@@ -1,0 +1,21 @@
+{
+  "name": "monopoly-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "tailwindcss": "^4.0.0",
+    "vite": "^8.0.0"
+  }
+}

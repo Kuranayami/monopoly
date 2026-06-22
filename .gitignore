@@ -1,9 +1,9 @@
 # Dependency directories
-/node_modules
+node_modules/
 /jspm_packages
 
-# TypeScript/Babel build outputs
-/dist
+# Build outputs
+dist/
 /build
 /out
 /tsc-out

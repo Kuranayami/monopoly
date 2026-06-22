@@ -22,40 +22,39 @@ export async function initStore() {
 
 export function isConnected() { return useMongo; }
 
-// Game operations
+// Game operations — keyed by roomCode
 export async function createGame(gameData) {
   if (useMongo) {
     const game = new Game(gameData);
     return await game.save();
   }
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const game = { ...gameData, _id: id, id, createdAt: new Date(), updatedAt: new Date() };
-  memoryGames.set(id, game);
+  const game = { ...gameData, _id: gameData.roomCode, createdAt: new Date(), updatedAt: new Date() };
+  memoryGames.set(gameData.roomCode, game);
   return game;
 }
 
-export async function getGame(gameId) {
+export async function getGame(roomCode) {
   if (useMongo) {
-    return await Game.findById(gameId);
+    return await Game.findOne({ roomCode });
   }
-  return memoryGames.get(gameId) || null;
+  return memoryGames.get(roomCode) || null;
 }
 
-export async function updateGame(gameId, updates) {
+export async function updateGame(roomCode, updates) {
   if (useMongo) {
-    return await Game.findByIdAndUpdate(gameId, { ...updates, updatedAt: new Date() }, { new: true });
+    return await Game.findOneAndUpdate({ roomCode }, { ...updates, updatedAt: new Date() }, { new: true });
   }
-  const game = memoryGames.get(gameId);
+  const game = memoryGames.get(roomCode);
   if (!game) return null;
   Object.assign(game, updates, { updatedAt: new Date() });
   return game;
 }
 
-export async function deleteGame(gameId) {
+export async function deleteGame(roomCode) {
   if (useMongo) {
-    return await Game.findByIdAndDelete(gameId);
+    return await Game.findOneAndDelete({ roomCode });
   }
-  return memoryGames.delete(gameId);
+  return memoryGames.delete(roomCode);
 }
 
 export async function listGames() {

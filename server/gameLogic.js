@@ -1,5 +1,8 @@
 import { SPACES, GO_SALARY, JAIL_BAIL, MAX_JAIL_TURNS, MAX_CONSECUTIVE_DOUBLES } from '../shared/constants.js';
 
+const MAX_HOUSES = 32;
+const MAX_HOTELS = 12;
+
 export function rollDice() {
   const d1 = Math.floor(Math.random() * 6) + 1;
   const d2 = Math.floor(Math.random() * 6) + 1;
@@ -21,6 +24,8 @@ export function calculateRent(spaceId, game) {
   if (!space) return 0;
   const owner = game.players.find(p => p.properties.includes(spaceId) && !p.isBankrupt);
   if (!owner) return 0;
+
+  if (owner.mortgaged?.includes(spaceId)) return 0;
 
   if (space.type === 'property') {
     const houses = owner.houses?.[spaceId] || 0;
@@ -61,18 +66,46 @@ export function playerOwnsFullGroup(player, group) {
   return groupProps.every(propId => player.properties.includes(propId));
 }
 
+function groupHasMortgaged(player, group) {
+  const groupProps = SPACES.filter(s => s.group === group && s.type === 'property').map(s => s.id);
+  return groupProps.some(pid => (player.mortgaged || []).includes(pid));
+}
+
+function usedHouses(game) {
+  let total = 0;
+  for (const p of game.players) {
+    for (const pid of p.properties) {
+      total += (p.houses?.[pid] || 0);
+    }
+  }
+  return total;
+}
+
+function usedHotels(game) {
+  let total = 0;
+  for (const p of game.players) {
+    for (const pid of p.properties) {
+      if (p.hotels?.[pid]) total++;
+    }
+  }
+  return total;
+}
+
 export function canBuildHouse(player, spaceId, game) {
   const space = SPACES[spaceId];
   if (!space || space.type !== 'property') return false;
   if (!player.properties.includes(spaceId)) return false;
+  if ((player.mortgaged || []).includes(spaceId)) return false;
   if (!playerOwnsFullGroup(player, space.group)) return false;
+  if (groupHasMortgaged(player, space.group)) return false;
+  if (usedHouses(game) >= MAX_HOUSES) return false;
   const groupProps = SPACES.filter(s => s.group === space.group && s.type === 'property').map(s => s.id);
   const currentHouses = spaceId => (player.houses?.[spaceId] || 0) + (player.hotels?.[spaceId] ? 5 : 0);
   const targetHouses = currentHouses(spaceId);
   for (const pid of groupProps) {
     if (currentHouses(pid) < targetHouses) return false;
   }
-  if (targetHouses >= 5) return false;
+  if (targetHouses >= 4) return false;
   return player.cash >= space.buildCost;
 }
 
@@ -80,15 +113,33 @@ export function canBuildHotel(player, spaceId, game) {
   const space = SPACES[spaceId];
   if (!space || space.type !== 'property') return false;
   if (!player.properties.includes(spaceId)) return false;
+  if ((player.mortgaged || []).includes(spaceId)) return false;
   if (!playerOwnsFullGroup(player, space.group)) return false;
+  if (groupHasMortgaged(player, space.group)) return false;
   if (player.hotels?.[spaceId]) return false;
   if ((player.houses?.[spaceId] || 0) < 4) return false;
+  if (usedHotels(game) >= MAX_HOTELS) return false;
   const groupProps = SPACES.filter(s => s.group === space.group && s.type === 'property').map(s => s.id);
   for (const pid of groupProps) {
     if (pid === spaceId) continue;
     if ((player.houses?.[pid] || 0) < 4 && !player.hotels?.[pid]) return false;
   }
   return player.cash >= space.buildCost;
+}
+
+export function canSellHouse(player, spaceId, game) {
+  const space = SPACES[spaceId];
+  if (!space || space.type !== 'property') return false;
+  const current = player.houses?.[spaceId] || 0;
+  if (current <= 0) return false;
+  if (!playerOwnsFullGroup(player, space.group)) return true;
+  const groupProps = SPACES.filter(s => s.group === space.group && s.type === 'property').map(s => s.id);
+  const currentHouses = spaceId => (player.houses?.[spaceId] || 0) + (player.hotels?.[spaceId] ? 5 : 0);
+  const targetAfterSell = currentHouses(spaceId) - 1;
+  for (const pid of groupProps) {
+    if (currentHouses(pid) > targetAfterSell) return false;
+  }
+  return true;
 }
 
 export function calculateStreetRepair(player, perHouse, perHotel) {
@@ -105,10 +156,11 @@ export function calculateStreetRepair(player, perHouse, perHotel) {
 
 export function calculateAssets(player) {
   let total = player.cash;
+  const mortgaged = player.mortgaged || [];
   for (const pid of player.properties) {
     const space = SPACES[pid];
     if (space) {
-      total += space.price;
+      total += mortgaged.includes(pid) ? 0 : Math.floor(space.price / 2);
       const houses = player.houses?.[pid] || 0;
       total += houses * (space.buildCost || 0) * 0.5;
       if (player.hotels?.[pid]) {
