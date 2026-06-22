@@ -213,7 +213,7 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId }) 
   );
 }
 
-export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, onClose, game, playerId }) {
+export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, onMortgage, onUnmortgage, onClose, game, playerId }) {
   if (spaceId === null || spaceId === undefined) return null;
   const space = SPACES[spaceId];
   const player = game?.players?.find(p => p.id === playerId);
@@ -221,6 +221,8 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
   const houses = player.houses?.[spaceId] || 0;
   const hasHotel = player.hotels?.[spaceId];
   const canBuild = space.type === 'property';
+  const isMortgaged = player.mortgaged?.includes(spaceId);
+  const mortgageValue = space.price ? Math.floor(space.price / 2) : 0;
 
   return (
     <Overlay onClick={onClose}
@@ -271,6 +273,30 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}>
                 Sell House (${Math.floor(space.buildCost / 2)})
+              </Button>
+            )}
+          </View>
+        )}
+        {space.price > 0 && (
+          <View style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {!isMortgaged && (
+              <Button onPress={() => { onMortgage(spaceId); onClose(); }}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                  background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                }}>
+                Mortgage (${mortgageValue})
+              </Button>
+            )}
+            {isMortgaged && (
+              <Button onPress={() => { onUnmortgage(spaceId); onClose(); }}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                  background: 'rgba(34,197,94,0.15)', color: '#22c55e',
+                  border: '1px solid rgba(34,197,94,0.3)',
+                }}>
+                Unmortgage (${Math.ceil(mortgageValue + mortgageValue * 0.1)})
               </Button>
             )}
           </View>

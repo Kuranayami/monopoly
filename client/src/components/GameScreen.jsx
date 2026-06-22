@@ -192,6 +192,12 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     });
   }, [socket, showNotif]);
 
+  const handleUnmortgage = useCallback((spaceId) => {
+    socket?.emit('unmortgage', { spaceId }, (res) => {
+      if (!res?.success) showNotif(res?.error || 'Cannot unmortgage');
+    });
+  }, [socket, showNotif]);
+
   const handlePayBail = useCallback(() => {
     socket?.emit('pay_jail_bail', (res) => {
       if (!res?.success) showNotif(res?.error || 'Cannot pay bail');
@@ -440,7 +446,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {propModal && <PropertyModal spaceId={propModal.spaceId} onBuy={handleBuyProperty} onAuction={handleAuction} game={game} playerId={playerId} />}
         {auctionModal && <AuctionModal auction={auctionModal} game={game} playerId={playerId} socket={socket} />}
         {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} onPay={handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} />}
-        {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
+        {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onMortgage={handleMortgage} onUnmortgage={handleUnmortgage} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
         {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
         {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
         {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
@@ -526,7 +532,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {propModal && <PropertyModal spaceId={propModal.spaceId} onBuy={handleBuyProperty} onAuction={handleAuction} game={game} playerId={playerId} />}
       {auctionModal && <AuctionModal auction={auctionModal} game={game} playerId={playerId} socket={socket} />}
       {rentModal && <RentModal spaceId={rentModal.spaceId} rent={rentModal.rent} onPay={handlePayRent} onBankrupt={handleBankrupt} game={game} playerId={playerId} />}
-      {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
+      {buildModal && <BuildingsModal {...buildModal} onBuildHouse={handleBuildHouse} onBuildHotel={handleBuildHotel} onSell={handleSellHouse} onMortgage={handleMortgage} onUnmortgage={handleUnmortgage} onClose={() => setBuildModal(null)} game={game} playerId={playerId} />}
       {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
       {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
       {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
