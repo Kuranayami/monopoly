@@ -83,13 +83,12 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
 
 export function AuctionModal({ auction, game, playerId, socket }) {
   const [bidInput, setBidInput] = useState('');
-  const [timer, setTimer] = useState(5);
+  const [timer, setTimer] = useState(8);
   if (!auction || auction.spaceId === null || auction.spaceId === undefined) return null;
   const space = SPACES[auction.spaceId];
   const player = game?.players?.find(p => p.id === playerId);
   const myBid = auction.bidders?.[playerId] || 0;
   const canBid = player && parseInt(bidInput) > auction.currentBid && parseInt(bidInput) <= player.cash;
-  const skipVoted = auction.skipVotes?.includes(playerId);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -105,10 +104,6 @@ export function AuctionModal({ auction, game, playerId, socket }) {
     if (amount > (player?.cash || 0)) return;
     socket?.emit('auction_bid', { bid: amount });
     setBidInput('');
-  };
-
-  const voteSkip = () => {
-    socket?.emit('auction_skip_vote');
   };
 
   const highestBidder = auction.currentBidder
@@ -168,16 +163,6 @@ export function AuctionModal({ auction, game, playerId, socket }) {
         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
           Your cash: ${player?.cash || 0} • Your bid: ${myBid}
         </Text>
-
-        <Button onPress={voteSkip}
-          style={{
-            width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-            background: skipVoted ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)',
-            color: skipVoted ? '#22c55e' : '#fff',
-            border: skipVoted ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.1)',
-          }}>
-          {skipVoted ? 'Voted to Skip' : 'Vote to Skip'}
-        </Button>
       </View>
     </Overlay>
   );
@@ -248,13 +233,15 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
           Your cash: ${player.cash}
         </Text>
         <View style={{ display: 'flex', gap: 8 }}>
-          <Button onPress={onPay}
-            style={{
-              width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              background: GOLD, color: '#060612',
-            }}>
-            {player.cash >= payAmount ? `Pay $${payAmount}` : 'Pay (Will go negative)'}
-          </Button>
+          {(player.cash >= payAmount) && (
+            <Button onPress={onPay}
+              style={{
+                width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                background: GOLD, color: '#060612',
+              }}>
+              Pay ${payAmount}
+            </Button>
+          )}
           {onOpenBuildings && (
             <Button onPress={onOpenBuildings}
               style={{

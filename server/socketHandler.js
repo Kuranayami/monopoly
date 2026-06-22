@@ -416,7 +416,7 @@ export default function socketHandler(io) {
         }
         const existingTimer = auctionTimers.get(currentRoom);
         if (existingTimer) clearTimeout(existingTimer);
-        game.auction = { spaceId, currentBid: 0, currentBidder: null, bidders: {}, skipVotes: [], timerEnd: Date.now() + 5000 };
+        game.auction = { spaceId, currentBid: 0, currentBidder: null, bidders: {}, timerEnd: Date.now() + 8000 };
         game.lastAction = `Auction started for ${space.name}!`;
         await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
         io.to(currentRoom).emit('auction_started', { spaceId });
@@ -426,7 +426,7 @@ export default function socketHandler(io) {
           const g = await getGame(currentRoom);
           if (g && g.auction) await finishAuction(io, g);
           auctionTimers.delete(currentRoom);
-        }, 3000);
+        }, 8000);
         auctionTimers.set(currentRoom, timer);
       } catch (err) {
         typeof callback === 'function' && callback({ success: false, error: err.message });
@@ -450,7 +450,7 @@ export default function socketHandler(io) {
         game.auction.currentBid = amount;
         game.auction.currentBidder = player.id;
         game.auction.bidders[player.id] = amount;
-        game.auction.timerEnd = Date.now() + 5000;
+        game.auction.timerEnd = Date.now() + 8000;
         game.lastAction = `${player.name} bids $${amount} on ${space.name}`;
         await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
         io.to(currentRoom).emit('auction_update', { ...game.auction });
@@ -462,34 +462,8 @@ export default function socketHandler(io) {
           const g = await getGame(currentRoom);
           if (g && g.auction) await finishAuction(io, g);
           auctionTimers.delete(currentRoom);
-        }, 3000);
+        }, 8000);
         auctionTimers.set(currentRoom, newTimer);
-      } catch (err) {
-        typeof callback === 'function' && callback({ success: false, error: err.message });
-      }
-    });
-
-    socket.on('auction_skip_vote', async (_, callback) => {
-      try {
-        const game = await getGame(currentRoom);
-        if (!game) return typeof callback === 'function' && callback({ success: false, error: 'Game not found' });
-        if (!game.auction) return typeof callback === 'function' && callback({ success: false, error: 'No active auction' });
-        const player = game.players.find(p => p.id === currentPlayerId);
-        if (!player) return typeof callback === 'function' && callback({ success: false, error: 'Player not found' });
-        if (game.auction.skipVotes.includes(currentPlayerId)) {
-          return typeof callback === 'function' && callback({ success: false, error: 'Already voted to skip' });
-        }
-        game.auction.skipVotes.push(currentPlayerId);
-        const activePlayers = game.players.filter(p => !p.isBankrupt).length;
-        if (game.auction.skipVotes.length >= Math.ceil(activePlayers / 2)) {
-          await finishAuction(io, game);
-        } else {
-          game.lastAction = `${player.name} voted to skip the auction (${game.auction.skipVotes.length}/${Math.ceil(activePlayers / 2)} needed)`;
-          await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
-          io.to(currentRoom).emit('auction_update', { ...game.auction });
-          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-        }
-        typeof callback === 'function' && callback({ success: true });
       } catch (err) {
         typeof callback === 'function' && callback({ success: false, error: err.message });
       }
@@ -510,8 +484,31 @@ export default function socketHandler(io) {
         player.paidRentThisTurn = true;
         player.cash -= rent;
         owner.cash += rent;
-        game.lastAction = `${player.name} paid $${rent} rent to ${owner.name}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        if (player.cash < 0) {
+          owner.cash += player.cash;
+          player.properties.forEach(pid => {
+            if (!owner.properties.includes(pid)) owner.properties.push(pid);
+          });
+          player.properties = [];
+          player.houses = {};
+          player.hotels = {};
+          player.cash = 0;
+          player.isBankrupt = true;
+          game.lastAction = `${player.name} paid $${rent} rent but couldn't afford it and is bankrupt!`;
+          if (!checkGameOver(game)) {
+            const nextIdx = findNextActivePlayer(game, game.currentTurn);
+            game.currentTurn = nextIdx;
+            game.turnPhase = 'pre_roll';
+            game.canRollAgain = false;
+            game.dice = [];
+            game.lastDiceTotal = null;
+            game.players.forEach(p => { p.paidRentThisTurn = false; });
+            game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+          }
+        } else {
+          game.lastAction = `${player.name} paid $${rent} rent to ${owner.name}`;
+        }
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -531,8 +528,28 @@ export default function socketHandler(io) {
         const amount = space.taxAmount;
         player.cash -= amount;
         game.freeParkingPool = (game.freeParkingPool || 0) + amount;
-        game.lastAction = `${player.name} paid $${amount} tax`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, freeParkingPool: game.freeParkingPool });
+        if (player.cash < 0) {
+          player.properties = [];
+          player.houses = {};
+          player.hotels = {};
+          player.mortgaged = [];
+          player.cash = 0;
+          player.isBankrupt = true;
+          game.lastAction = `${player.name} couldn't afford the tax and is bankrupt!`;
+          if (!checkGameOver(game)) {
+            const nextIdx = findNextActivePlayer(game, game.currentTurn);
+            game.currentTurn = nextIdx;
+            game.turnPhase = 'pre_roll';
+            game.canRollAgain = false;
+            game.dice = [];
+            game.lastDiceTotal = null;
+            game.players.forEach(p => { p.paidRentThisTurn = false; });
+            game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+          }
+        } else {
+          game.lastAction = `${player.name} paid $${amount} tax`;
+        }
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, freeParkingPool: game.freeParkingPool, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         typeof callback === 'function' && callback({ success: true });
       } catch (err) {

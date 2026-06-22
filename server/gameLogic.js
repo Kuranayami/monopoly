@@ -134,11 +134,10 @@ export function canSellHouse(player, spaceId, game) {
   if (current <= 0) return false;
   if (!playerOwnsFullGroup(player, space.group)) return true;
   const groupProps = SPACES.filter(s => s.group === space.group && s.type === 'property').map(s => s.id);
-  const currentHouses = spaceId => (player.houses?.[spaceId] || 0) + (player.hotels?.[spaceId] ? 5 : 0);
-  const targetAfterSell = currentHouses(spaceId) - 1;
-  for (const pid of groupProps) {
-    if (currentHouses(pid) > targetAfterSell) return false;
-  }
+  const houseCount = pid => (player.houses?.[pid] || 0) + (player.hotels?.[pid] ? 5 : 0);
+  const maxInGroup = Math.max(...groupProps.map(pid => houseCount(pid)));
+  const currentCount = houseCount(spaceId);
+  if (currentCount < maxInGroup) return false;
   return true;
 }
 
