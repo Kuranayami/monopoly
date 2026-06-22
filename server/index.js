@@ -7,7 +7,10 @@ import socketHandler from './socketHandler.js';
 
 const app = express();
 const server = createServer(app);
-const CLIENT_URL = process.env.CLIENT_URL || '*';
+let CLIENT_URL = process.env.CLIENT_URL || '*';
+if (CLIENT_URL !== '*' && !CLIENT_URL.startsWith('http')) {
+  CLIENT_URL = 'https://' + CLIENT_URL;
+}
 const io = new Server(server, {
   cors: { origin: CLIENT_URL, methods: ['GET', 'POST'] },
 });
