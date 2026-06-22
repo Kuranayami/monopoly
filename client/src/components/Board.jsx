@@ -18,6 +18,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
     (gx === 10 && gy === 0) || (gx === 10 && gy === 10);
 
   const nameFs = Math.max(8, Math.floor(cellSize * 0.12));
+  const priceFs = Math.max(7, Math.floor(cellSize * 0.09));
   const cornerFs = Math.max(10, Math.floor(cellSize * 0.16));
   const barH = Math.max(4, Math.floor(cellSize * 0.07));
   const tokenSize = Math.max(18, Math.floor(cellSize * 0.18));
@@ -57,12 +58,31 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                 <Text style={{
                   fontSize: nameFs,
                   color: 'rgba(255,255,255,0.7)',
-                  textAlign: 'center', lineHeight: 1.2, padding: '0 2px',
+                  textAlign: 'center', lineHeight: 1.15, padding: '0 2px',
                   marginTop: 2, width: '100%',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  wordBreak: 'break-word',
                 }}>
                   {space.name}
                 </Text>
+                {space.price > 0 && (
+                  <Text style={{
+                    fontSize: priceFs, color: '#fbbf24',
+                    textAlign: 'center', lineHeight: 1.1, marginTop: 1,
+                  }}>
+                    ${space.price}
+                  </Text>
+                )}
+                {(() => {
+                  const owner = game?.players?.find(p => p.properties.includes(pos) && !p.isBankrupt);
+                  return owner ? (
+                    <Text style={{
+                      fontSize: Math.max(6, priceFs - 1), color: 'rgba(255,255,255,0.35)',
+                      textAlign: 'center', lineHeight: 1.1, marginTop: 1,
+                    }}>
+                      {owner.name}
+                    </Text>
+                  ) : null;
+                })()}
               </>
             )}
             {corner && space && (

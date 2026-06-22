@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, Button, Scroller } from '../elements.jsx';
+import { View, Text, Button, Scroller, Overlay } from '../elements.jsx';
 import { useIsMobile, useIsDesktop, useWindowSize } from '../hooks.js';
 import Board from './Board.jsx';
 import ZoomBoard from './ZoomBoard.jsx';
@@ -24,6 +24,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   const [tradeModal, setTradeModal] = useState(false);
   const [tradeProposal, setTradeProposal] = useState(null);
   const [propsModal, setPropsModal] = useState(null);
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [landedOnCard, setLandedOnCard] = useState(false);
 
@@ -195,6 +196,19 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     });
   }, [socket, showNotif]);
 
+  const handleLeaveClick = useCallback(() => {
+    setLeaveConfirm(true);
+  }, []);
+
+  const handleLeaveConfirm = useCallback(() => {
+    setLeaveConfirm(false);
+    onLeave();
+  }, [onLeave]);
+
+  const handleLeaveCancel = useCallback(() => {
+    setLeaveConfirm(false);
+  }, []);
+
   const handleHostStart = useCallback(() => {
     if (!socket) return showNotif('Socket not connected');
     socket.emit('start_game', (res) => {
@@ -299,7 +313,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               Start Game
             </Button>
           )}
-          <Button onPress={onLeave}
+          <Button onPress={handleLeaveClick}
             style={{
               width: '100%', padding: '10px', borderRadius: 12, fontSize: 13,
               background: 'transparent', color: 'rgba(255,255,255,0.4)', marginTop: 8,
@@ -350,7 +364,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
               {showChat ? 'Board' : 'Chat'}
             </Button>
-            <Button onPress={onLeave}
+            <Button onPress={handleLeaveClick}
               style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>
               Leave
             </Button>
@@ -411,6 +425,28 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
         {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
         {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
+        {leaveConfirm && (
+          <Overlay>
+            <View style={{
+              background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+              borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
+              padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
+            }}>
+              <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
+              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
+              <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+                <Button onPress={handleLeaveConfirm}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+                  Leave
+                </Button>
+                <Button onPress={handleLeaveCancel}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                  Cancel
+                </Button>
+              </View>
+            </View>
+          </Overlay>
+        )}
       </View>
     );
   }
@@ -422,7 +458,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <>
           <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Text style={{ fontSize: 16, fontWeight: 800, color: '#fbbf24' }}>{game.roomCode}</Text>
-            <Button onPress={onLeave} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>Leave</Button>
+            <Button onPress={handleLeaveClick} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>Leave</Button>
           </View>
           <PlayerList game={game} playerId={playerId} />
           <View style={{ height: 8 }} />
@@ -475,6 +511,28 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
       {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
       {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
+      {leaveConfirm && (
+        <Overlay>
+          <View style={{
+            background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+            borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
+            padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
+            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
+            <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+              <Button onPress={handleLeaveConfirm}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+                Leave
+              </Button>
+              <Button onPress={handleLeaveCancel}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </Overlay>
+      )}
     </View>
   );
 }

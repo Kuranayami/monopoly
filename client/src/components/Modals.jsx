@@ -356,11 +356,13 @@ export function TradeModal({ game, playerId, socket, onClose }) {
                 return (
                   <Button key={pid} onPress={() => toggleOfferProp(pid)}
                     style={{
-                      padding: '4px 10px', borderRadius: 8, fontSize: 11,
+                      padding: '4px 8px', borderRadius: 8, fontSize: 11,
                       background: selected ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.04)',
                       border: selected ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
                       color: selected ? '#fbbf24' : 'rgba(255,255,255,0.6)',
+                      display: 'flex', alignItems: 'center', gap: 4,
                     }}>
+                    {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
                     {s?.name || `Space ${pid}`}
                   </Button>
                 );
@@ -399,11 +401,13 @@ export function TradeModal({ game, playerId, socket, onClose }) {
                 return (
                   <Button key={pid} onPress={() => toggleRequestProp(pid)}
                     style={{
-                      padding: '4px 10px', borderRadius: 8, fontSize: 11,
+                      padding: '4px 8px', borderRadius: 8, fontSize: 11,
                       background: selected ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.04)',
                       border: selected ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
                       color: selected ? '#fbbf24' : 'rgba(255,255,255,0.6)',
+                      display: 'flex', alignItems: 'center', gap: 4,
                     }}>
+                    {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
                     {s?.name || `Space ${pid}`}
                   </Button>
                 );
@@ -505,7 +509,12 @@ export function TradeProposalModal({ proposal, game, onAccept, onDecline }) {
       <Text style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600, marginBottom: 4 }}>{label}</Text>
       {(assets.properties || []).map(pid => {
         const s = SPACES[pid];
-        return <Text key={pid} style={{ fontSize: 12, color: '#fff' }}>  {s?.name || `Space ${pid}`}</Text>;
+        return (
+          <View key={pid} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+            {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
+            <Text style={{ fontSize: 12, color: '#fff' }}>{s?.name || `Space ${pid}`}</Text>
+          </View>
+        );
       })}
       {assets.cash > 0 && <Text style={{ fontSize: 12, color: '#fff' }}>  ${assets.cash}</Text>}
       {assets.jailCards > 0 && <Text style={{ fontSize: 12, color: '#fff' }}>  {assets.jailCards} Jail Card(s)</Text>}
