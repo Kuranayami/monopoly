@@ -184,10 +184,46 @@ export function AuctionModal({ auction, game, playerId, socket }) {
 }
 
 export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, isTax, amount, onOpenBuildings }) {
+  const [confirming, setConfirming] = useState(false);
   const payAmount = amount || rent;
   const space = SPACES[spaceId];
   const player = game?.players?.find(p => p.id === playerId);
   if (!player) return null;
+
+  const creditor = !isTax && space && ['property', 'railroad', 'utility'].includes(space.type)
+    ? game?.players?.find(p => p.properties.includes(spaceId) && !p.isBankrupt) : null;
+
+  if (confirming) {
+    return (
+      <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+        <View style={{
+          animation: 'modal-enter 0.3s ease',
+          background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+          borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
+          padding: 32, maxWidth: 360, width: '90%', textAlign: 'center',
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: 700, color: '#ef4444', marginBottom: 12 }}>
+            Declare Bankruptcy?
+          </Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 16, lineHeight: 1.5 }}>
+            {creditor
+              ? `All your properties and cash will go to ${creditor.name}. You will be out of the game.`
+              : 'All your properties will go to the bank. You will be out of the game.'}
+          </Text>
+          <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+            <Button onPress={() => { setConfirming(false); onBankrupt(); }}
+              style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+              Yes, Declare
+            </Button>
+            <Button onPress={() => setConfirming(false)}
+              style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+              Cancel
+            </Button>
+          </View>
+        </View>
+      </Overlay>
+    );
+  }
 
   return (
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
@@ -229,7 +265,7 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
               Mortgage / Sell
             </Button>
           )}
-          <Button onPress={onBankrupt}
+          <Button onPress={() => setConfirming(true)}
             style={{
               width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
               background: 'rgba(239,68,68,0.15)', color: '#ef4444',
