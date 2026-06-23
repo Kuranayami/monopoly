@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Button, Input, Overlay, Scroller } from '../elements.jsx';
 import { SPACES, CHANCE, COMMUNITY_CHEST } from 'shared/constants.js';
 
@@ -84,6 +84,7 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
 export function AuctionModal({ auction, game, playerId, socket }) {
   const [bidInput, setBidInput] = useState('');
   const [timer, setTimer] = useState(8);
+  const timerRef = useRef(null);
   if (!auction || auction.spaceId === null || auction.spaceId === undefined) return null;
   const space = SPACES[auction.spaceId];
   const player = game?.players?.find(p => p.id === playerId);
@@ -91,12 +92,13 @@ export function AuctionModal({ auction, game, playerId, socket }) {
   const canBid = player && parseInt(bidInput) > auction.currentBid && parseInt(bidInput) <= player.cash;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((auction.timerEnd - Date.now()) / 1000));
-      setTimer(remaining);
+    setTimer(8);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setTimer(prev => Math.max(0, +(prev - 0.2).toFixed(1)));
     }, 200);
-    return () => clearInterval(interval);
-  }, [auction.timerEnd]);
+    return () => clearInterval(timerRef.current);
+  }, [auction.timerEnd || auction.spaceId]);
 
   const placeBid = () => {
     const amount = parseInt(bidInput);
@@ -125,7 +127,7 @@ export function AuctionModal({ auction, game, playerId, socket }) {
           Starting price: ${space?.price || 0}
         </Text>
 
-        <Text style={{ fontSize: 20, fontWeight: 700, color: timer <= 1 ? '#3B82F6' : '#3B82F6', textAlign: 'center', marginBottom: 12 }}>
+        <Text style={{ fontSize: 20, fontWeight: 700, color: timer <= 1 ? '#ef4444' : '#3B82F6', textAlign: 'center', marginBottom: 12 }}>
           {timer > 0 ? `${timer}s` : 'Time\'s up!'}
         </Text>
 
