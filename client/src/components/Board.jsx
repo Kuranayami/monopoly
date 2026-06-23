@@ -7,7 +7,9 @@ const TOKEN_ICONS = {
   iron: '\u{1F527}', battleship: '\u{1F6A2}', thimble: '\u{1F9F5}',
 };
 
-export default function Board({ game, playerId, cellSize = 72 }) {
+const DICE_FACES = ['', '\u2680', '\u2681', '\u2682', '\u2683', '\u2684', '\u2685'];
+
+export default function Board({ game, playerId, cellSize = 72, dice, rolling }) {
   const boardPx = cellSize * GRID_SIZE;
 
   const getTokens = (pos) =>
@@ -121,21 +123,45 @@ export default function Board({ game, playerId, cellSize = 72 }) {
         );
       })}
 
-      {/* Center logo */}
+      {/* Center dice / logo */}
       <View style={{
         position: 'absolute', top: cellSize, left: cellSize,
         width: cellSize * (GRID_SIZE - 2), height: cellSize * (GRID_SIZE - 2),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         pointerEvents: 'none',
       }}>
-        <Text style={{
-          fontSize: Math.max(10, cellSize * 0.3), fontWeight: 800,
-          background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          opacity: 0.3, letterSpacing: 4,
-        }}>
-          MONOPOLY
-        </Text>
+        {dice && dice.length === 2 ? (
+          <View style={{
+            display: 'flex', flexDirection: 'row', gap: Math.max(8, cellSize * 0.15),
+            animation: rolling ? 'dice-shake 0.15s infinite' : 'dice-land 0.3s ease',
+          }}>
+            <View style={{
+              width: cellSize * 0.55, height: cellSize * 0.55,
+              background: '#fff', borderRadius: cellSize * 0.1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            }}>
+              <Text style={{ fontSize: cellSize * 0.35, lineHeight: 1, color: '#1a1a2e' }}>{DICE_FACES[dice[0]]}</Text>
+            </View>
+            <View style={{
+              width: cellSize * 0.55, height: cellSize * 0.55,
+              background: '#fff', borderRadius: cellSize * 0.1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            }}>
+              <Text style={{ fontSize: cellSize * 0.35, lineHeight: 1, color: '#1a1a2e' }}>{DICE_FACES[dice[1]]}</Text>
+            </View>
+          </View>
+        ) : (
+          <Text style={{
+            fontSize: Math.max(10, cellSize * 0.3), fontWeight: 800,
+            background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            opacity: 0.3, letterSpacing: 4,
+          }}>
+            MONOPOLY
+          </Text>
+        )}
       </View>
     </View>
   );

@@ -443,7 +443,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             <View style={{ height: 'calc(100dvh - 200px)', overflow: 'hidden' }}>
               <ZoomBoard>
                 <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0' }}>
-                  <Board game={game} playerId={playerId} cellSize={cellSize} />
+                  <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} />
                   <View style={{ padding: '0 12px' }}>
                     <PlayerList game={game} playerId={playerId} />
                   </View>
@@ -532,7 +532,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 
       <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden' }}>
         <ZoomBoard>
-          <Board game={game} playerId={playerId} cellSize={cellSize} />
+          <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} />
         </ZoomBoard>
         {gameActions}
         <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
