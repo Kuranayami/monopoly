@@ -21,6 +21,7 @@ const gameSchema = new mongoose.Schema({
     socketId: { type: String, default: null },
     turnOrder: Number,
   }],
+  private: { type: Boolean, default: false },
   canRollAgain: { type: Boolean, default: false },
   currentTurn: { type: Number, default: 0 },
   turnPhase: { type: String, default: 'pre_roll' },

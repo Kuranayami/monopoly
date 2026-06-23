@@ -47,7 +47,7 @@ export default function socketHandler(io) {
     let currentPlayerId = null;
     let currentRoom = null;
 
-    socket.on('create_room', async ({ playerName, token }, callback) => {
+    socket.on('create_room', async ({ playerName, token, isPrivate }, callback) => {
       try {
         let roomCode;
         let attempts = 0;
@@ -81,6 +81,7 @@ export default function socketHandler(io) {
             socketId: socket.id,
             turnOrder: 0,
           }],
+          private: isPrivate || false,
           canRollAgain: false,
           currentTurn: 0,
           turnPhase: 'pre_roll',
@@ -884,7 +885,7 @@ export default function socketHandler(io) {
     socket.on('list_rooms', async (callback) => {
       try {
         const games = await listGames();
-        const rooms = games.filter(g => g.status === 'waiting' && g.players.length > 0).map(g => ({
+        const rooms = games.filter(g => g.status === 'waiting' && g.players.length > 0 && !g.private).map(g => ({
           roomCode: g.roomCode,
           hostName: g.hostName,
           playerCount: g.players.length,
