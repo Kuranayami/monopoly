@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text } from '../elements.jsx';
 import { SPACES, GRID_POSITIONS, GRID_SIZE } from 'shared/constants.js';
 
@@ -10,6 +10,27 @@ const TOKEN_ICONS = {
 const DICE_FACES = ['', '\u2680', '\u2681', '\u2682', '\u2683', '\u2684', '\u2685'];
 
 export default function Board({ game, playerId, cellSize = 72, dice, rolling }) {
+  const [displayDice, setDisplayDice] = useState(null);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (rolling) {
+      setDisplayDice(null);
+      intervalRef.current = setInterval(() => {
+        setDisplayDice([
+          Math.floor(Math.random() * 6) + 1,
+          Math.floor(Math.random() * 6) + 1,
+        ]);
+      }, 80);
+    } else {
+      clearInterval(intervalRef.current);
+      if (dice && dice.length === 2) {
+        setDisplayDice(dice);
+      }
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [rolling, dice]);
+
   const boardPx = cellSize * GRID_SIZE;
 
   const getTokens = (pos) =>
@@ -130,10 +151,10 @@ export default function Board({ game, playerId, cellSize = 72, dice, rolling }) 
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         pointerEvents: 'none',
       }}>
-        {dice && dice.length === 2 ? (
+        {displayDice && displayDice.length === 2 ? (
           <View style={{
             display: 'flex', flexDirection: 'row', gap: Math.max(8, cellSize * 0.15),
-            animation: rolling ? 'dice-shake 0.15s infinite' : 'dice-land 0.3s ease',
+            animation: rolling ? 'dice-shake 0.08s infinite' : 'dice-land 0.3s ease',
           }}>
             <View style={{
               width: cellSize * 0.55, height: cellSize * 0.55,
@@ -141,7 +162,7 @@ export default function Board({ game, playerId, cellSize = 72, dice, rolling }) 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
             }}>
-              <Text style={{ fontSize: cellSize * 0.35, lineHeight: 1, color: '#1a1a2e' }}>{DICE_FACES[dice[0]]}</Text>
+              <Text style={{ fontSize: cellSize * 0.35, lineHeight: 1, color: '#1a1a2e' }}>{DICE_FACES[displayDice[0]]}</Text>
             </View>
             <View style={{
               width: cellSize * 0.55, height: cellSize * 0.55,
@@ -149,7 +170,7 @@ export default function Board({ game, playerId, cellSize = 72, dice, rolling }) 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
             }}>
-              <Text style={{ fontSize: cellSize * 0.35, lineHeight: 1, color: '#1a1a2e' }}>{DICE_FACES[dice[1]]}</Text>
+              <Text style={{ fontSize: cellSize * 0.35, lineHeight: 1, color: '#1a1a2e' }}>{DICE_FACES[displayDice[1]]}</Text>
             </View>
           </View>
         ) : (
