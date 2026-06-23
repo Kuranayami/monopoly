@@ -1,11 +1,12 @@
+import crypto from 'node:crypto';
 import { SPACES, GO_SALARY, JAIL_BAIL, MAX_JAIL_TURNS, MAX_CONSECUTIVE_DOUBLES } from '../shared/constants.js';
 
 const MAX_HOUSES = 32;
 const MAX_HOTELS = 12;
 
 export function rollDice() {
-  const d1 = Math.floor(Math.random() * 6) + 1;
-  const d2 = Math.floor(Math.random() * 6) + 1;
+  const d1 = crypto.randomInt(1, 7);
+  const d2 = crypto.randomInt(1, 7);
   return [d1, d2];
 }
 
