@@ -220,16 +220,17 @@ export default function socketHandler(io) {
     });
 
     socket.on('roll_dice', async (_, callback) => {
+      const ack = typeof callback === 'function' ? callback : () => {};
       try {
         const game = await getGame(currentRoom);
-        if (!game) return callback({ success: false, error: 'Game not found' });
+        if (!game) return ack({ success: false, error: 'Game not found' });
         const player = game.players.find(p => p.id === currentPlayerId);
-        if (!player) return callback({ success: false, error: 'Player not found' });
+        if (!player) return ack({ success: false, error: 'Player not found' });
         if (game.players[game.currentTurn]?.id !== currentPlayerId) {
-          return callback({ success: false, error: 'Not your turn' });
+          return ack({ success: false, error: 'Not your turn' });
         }
         if (game.turnPhase !== 'pre_roll') {
-          return callback({ success: false, error: 'Already rolled this turn' });
+          return ack({ success: false, error: 'Already rolled this turn' });
         }
 
         const dice = rollDice();
@@ -238,8 +239,6 @@ export default function socketHandler(io) {
         game.lastDiceTotal = diceTotal;
         game.dice = dice;
         game.turnPhase = 'post_roll';
-
-        const playerIndex = game.currentTurn;
 
         if (player.inJail) {
           if (double) {
@@ -270,7 +269,7 @@ export default function socketHandler(io) {
             lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
           });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-          return callback({ success: true, double, dice, game: await getGame(currentRoom) });
+          return ack({ success: true, double, dice, game: await getGame(currentRoom) });
         }
 
         if (double) {
@@ -291,7 +290,7 @@ export default function socketHandler(io) {
               currentTurn: game.currentTurn, canRollAgain: false,
             });
             io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-            return callback({ success: true, double, dice, sentToJail: true, game: await getGame(currentRoom) });
+            return ack({ success: true, double, dice, sentToJail: true, game: await getGame(currentRoom) });
           }
         } else {
           player.consecutiveDoubles = 0;
@@ -317,28 +316,29 @@ export default function socketHandler(io) {
           canRollAgain: game.canRollAgain,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-        callback({ success: true, double, dice, game: await getGame(currentRoom) });
+        ack({ success: true, double, dice, game: await getGame(currentRoom) });
       } catch (err) {
-        typeof callback === 'function' && callback({ success: false, error: err.message });
+        ack({ success: false, error: err.message });
       }
     });
 
     socket.on('end_turn', async (_, callback) => {
+      const ack = typeof callback === 'function' ? callback : () => {};
       try {
         const game = await getGame(currentRoom);
-        if (!game) return callback({ success: false, error: 'Game not found' });
+        if (!game) return ack({ success: false, error: 'Game not found' });
         if (game.players[game.currentTurn]?.id !== currentPlayerId) {
-          return callback({ success: false, error: 'Not your turn' });
+          return ack({ success: false, error: 'Not your turn' });
         }
         const player = game.players[game.currentTurn];
         if (player.inJail && game.turnPhase === 'pre_roll') {
-          return callback({ success: false, error: 'Must roll dice, pay bail, or use jail card' });
+          return ack({ success: false, error: 'Must roll dice, pay bail, or use jail card' });
         }
         if (game.turnPhase !== 'post_roll') {
           game.lastAction = `${player.name} must roll first`;
           await updateGame(game.roomCode, { lastAction: game.lastAction });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-          return callback({ success: false, error: 'Must roll dice first' });
+          return ack({ success: false, error: 'Must roll dice first' });
         }
         // Double roll: give extra roll instead of ending turn
         if (game.canRollAgain) {
@@ -353,7 +353,7 @@ export default function socketHandler(io) {
             lastDiceTotal: game.lastDiceTotal, canRollAgain: false,
           });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-          return callback({ success: true, rollAgain: true, game: await getGame(currentRoom) });
+          return ack({ success: true, rollAgain: true, game: await getGame(currentRoom) });
         }
 
         // Reset paidRent flag for next player's turn
@@ -372,9 +372,9 @@ export default function socketHandler(io) {
           canRollAgain: false,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
-        callback({ success: true, game: await getGame(currentRoom) });
+        ack({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
-        typeof callback === 'function' && callback({ success: false, error: err.message });
+        ack({ success: false, error: err.message });
       }
     });
 
