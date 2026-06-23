@@ -3,7 +3,7 @@ import { View, Text, Button, Input, Scroller } from '../elements.jsx';
 import { useWindowSize, useIsMobile, useIsDesktop } from '../hooks.js';
 import { TOKENS } from 'shared/constants.js';
 
-const GOLD = 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)';
+const ACCENT = '#3B82F6';
 
 export default function Lobby({ socket, connected, playerName, setPlayerName, playerToken, setPlayerToken, playerId, onJoinGame, showNotif }) {
   const { width } = useWindowSize();
@@ -66,32 +66,32 @@ export default function Lobby({ socket, connected, playerName, setPlayerName, pl
   return (
     <View style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <View style={{
-        width: cardW, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
+        width: cardW, background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)', padding: g(32),
         animation: 'fade-in-up 0.5s ease',
       }}>
-        <Text style={{ fontSize: g(36), fontWeight: 800, textAlign: 'center', background: GOLD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: g(8) }}>
+        <Text style={{ fontSize: g(36), fontWeight: 800, textAlign: 'center', color: '#3B82F6', marginBottom: g(8) }}>
           MONOPOLY
         </Text>
-        <Text style={{ fontSize: g(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: g(24) }}>
+        <Text style={{ fontSize: g(13), color: '#A0A0A0', textAlign: 'center', marginBottom: g(24) }}>
           {connected ? '🟢 Connected' : '🔴 Connecting...'}
         </Text>
 
-        <Text style={{ fontSize: g(13), color: 'rgba(255,255,255,0.6)', marginBottom: g(6) }}>Your Name</Text>
+        <Text style={{ fontSize: g(13), color: '#A0A0A0', marginBottom: g(6) }}>Your Name</Text>
         <Input
           value={playerName}
           onChangeText={setPlayerName}
           placeholder="Enter your name..."
-          placeholderTextColor="rgba(255,255,255,0.2)"
+          placeholderTextColor="#A0A0A0"
           style={{
             width: '100%', padding: `${g(12)}px ${g(16)}px`, fontSize: g(15),
-            background: 'rgba(255,255,255,0.04)', borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+            background: '#1E1E1E', borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
             marginBottom: g(20),
           }}
         />
 
-        <Text style={{ fontSize: g(13), color: 'rgba(255,255,255,0.6)', marginBottom: g(12) }}>Choose Your Token</Text>
+        <Text style={{ fontSize: g(13), color: '#A0A0A0', marginBottom: g(12) }}>Choose Your Token</Text>
         <View style={{ display: 'flex', flexWrap: 'wrap', gap: g(8), marginBottom: g(24) }}>
           {TOKENS.map(t => {
             const selected = playerToken === t;
@@ -99,9 +99,9 @@ export default function Lobby({ socket, connected, playerName, setPlayerName, pl
               <Button key={t} onPress={() => setPlayerToken(t)}
                 style={{
                   padding: `${g(8)}px ${g(14)}px`, borderRadius: 12, fontSize: g(13),
-                  background: selected ? GOLD : 'rgba(255,255,255,0.04)',
+                  background: selected ? ACCENT : '#1E1E1E',
                   border: selected ? 'none' : '1px solid rgba(255,255,255,0.08)',
-                  color: selected ? '#060612' : 'rgba(255,255,255,0.7)',
+                  color: selected ? '#F0F0F0' : '#A0A0A0',
                   fontWeight: selected ? 700 : 400,
                   transition: 'all 0.2s',
                 }}>
@@ -114,13 +114,13 @@ export default function Lobby({ socket, connected, playerName, setPlayerName, pl
         <View style={{ display: 'flex', gap: g(8), marginBottom: g(16) }}>
           <Button onPress={() => setTab('create')} style={{
             flex: 1, padding: `${g(10)}px`, borderRadius: 12, fontSize: g(14), fontWeight: 600,
-            background: tab === 'create' ? GOLD : 'rgba(255,255,255,0.04)',
-            color: tab === 'create' ? '#060612' : 'rgba(255,255,255,0.5)',
+            background: tab === 'create' ? ACCENT : '#1E1E1E',
+            color: tab === 'create' ? '#F0F0F0' : '#A0A0A0',
           }}>Create Room</Button>
           <Button onPress={() => setTab('join')} style={{
             flex: 1, padding: `${g(10)}px`, borderRadius: 12, fontSize: g(14), fontWeight: 600,
-            background: tab === 'join' ? GOLD : 'rgba(255,255,255,0.04)',
-            color: tab === 'join' ? '#060612' : 'rgba(255,255,255,0.5)',
+            background: tab === 'join' ? ACCENT : '#1E1E1E',
+            color: tab === 'join' ? '#F0F0F0' : '#A0A0A0',
           }}>Join Room</Button>
         </View>
 
@@ -128,7 +128,7 @@ export default function Lobby({ socket, connected, playerName, setPlayerName, pl
           <Button onPress={handleCreate} disabled={loading || !connected}
             style={{
               width: '100%', padding: `${g(14)}px`, borderRadius: 14, fontSize: g(16), fontWeight: 700,
-              background: GOLD, color: '#060612', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+              background: ACCENT, color: '#F0F0F0', boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
             }}>
             {loading ? 'Creating...' : 'Create Room'}
           </Button>
@@ -138,20 +138,20 @@ export default function Lobby({ socket, connected, playerName, setPlayerName, pl
               value={joinCode}
               onChangeText={(v) => setJoinCode(v.toUpperCase())}
               placeholder="Enter room code..."
-              placeholderTextColor="rgba(255,255,255,0.2)"
+              placeholderTextColor="#A0A0A0"
               maxLength={4}
               style={{
                 width: '100%', padding: `${g(12)}px ${g(16)}px`, fontSize: g(18),
                 textAlign: 'center', letterSpacing: g(4),
-                background: 'rgba(255,255,255,0.04)', borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+                background: '#1E1E1E', borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
                 marginBottom: g(12),
               }}
             />
             <Button onPress={handleJoin} disabled={loading || !connected}
               style={{
                 width: '100%', padding: `${g(14)}px`, borderRadius: 14, fontSize: g(16), fontWeight: 700,
-                background: GOLD, color: '#060612', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+                background: ACCENT, color: '#F0F0F0', boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
                 marginBottom: g(16),
               }}>
               {loading ? 'Joining...' : 'Join Room'}
@@ -161,17 +161,17 @@ export default function Lobby({ socket, connected, playerName, setPlayerName, pl
 
         {rooms.length > 0 && tab === 'join' && (
           <>
-            <Text style={{ fontSize: g(12), color: 'rgba(255,255,255,0.3)', marginBottom: g(8) }}>Available Rooms</Text>
+            <Text style={{ fontSize: g(12), color: '#A0A0A0', marginBottom: g(8) }}>Available Rooms</Text>
             <Scroller style={{ maxHeight: g(150) }}>
               {rooms.map(r => (
                 <Button key={r.roomCode} onPress={() => setJoinCode(r.roomCode)}
                   style={{
                     width: '100%', padding: `${g(8)}px ${g(12)}px`, borderRadius: 10,
-                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                    background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.06)',
                     marginBottom: g(6), display: 'flex', justifyContent: 'space-between',
                   }}>
-                  <Text style={{ fontSize: g(13), color: '#fbbf24', fontWeight: 600 }}>{r.roomCode}</Text>
-                  <Text style={{ fontSize: g(12), color: 'rgba(255,255,255,0.4)' }}>{r.hostName} • {r.playerCount}/6</Text>
+                  <Text style={{ fontSize: g(13), color: '#3B82F6', fontWeight: 600 }}>{r.roomCode}</Text>
+                  <Text style={{ fontSize: g(12), color: '#A0A0A0' }}>{r.hostName} • {r.playerCount}/6</Text>
                 </Button>
               ))}
             </Scroller>

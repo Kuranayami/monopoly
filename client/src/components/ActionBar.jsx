@@ -1,6 +1,6 @@
 import { View, Text, Button } from '../elements.jsx';
 
-const GOLD = 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)';
+const ACCENT = '#3B82F6';
 
 export default function ActionBar({ game, playerId, socket, isMobile }) {
   const player = game?.players?.find(p => p.id === playerId);
@@ -33,8 +33,8 @@ export default function ActionBar({ game, playerId, socket, isMobile }) {
     border: 'none', cursor: 'pointer',
   };
 
-  const goldBtn = { ...btnBase, background: GOLD, color: '#060612', boxShadow: '0 4px 16px rgba(245,158,11,0.3)' };
-  const glassBtn = { ...btnBase, background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' };
+  const goldBtn = { ...btnBase, background: ACCENT, color: '#F0F0F0', boxShadow: '0 4px 16px rgba(59,130,246,0.3)' };
+  const glassBtn = { ...btnBase, background: 'rgba(255,255,255,0.06)', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.1)' };
 
   return (
     <View style={{

@@ -76,6 +76,7 @@ export default function socketHandler(io) {
             getOutOfJailCards: 0,
             isBankrupt: false,
             consecutiveDoubles: 0,
+            paidRentThisTurn: false,
             connected: true,
             socketId: socket.id,
             turnOrder: 0,
@@ -128,6 +129,7 @@ export default function socketHandler(io) {
           getOutOfJailCards: 0,
           isBankrupt: false,
           consecutiveDoubles: 0,
+          paidRentThisTurn: false,
           connected: true,
           socketId: socket.id,
           turnOrder: game.players.length,
@@ -476,6 +478,7 @@ export default function socketHandler(io) {
         if (!game) return callback({ success: false, error: 'Game not found' });
         const player = game.players.find(p => p.id === currentPlayerId);
         if (!player) return callback({ success: false, error: 'Player not found' });
+        if (game.turnPhase !== 'post_roll') return callback({ success: false, error: 'Not the right time' });
         if (player.paidRentThisTurn) return callback({ success: false, error: 'Already paid rent' });
         const rent = calculateRent(player.position, game);
         if (rent <= 0) return callback({ success: false, error: 'No rent due' });
@@ -490,6 +493,8 @@ export default function socketHandler(io) {
           player.properties.forEach(pid => {
             if (!owner.properties.includes(pid)) owner.properties.push(pid);
           });
+          Object.entries(player.houses || {}).forEach(([k, v]) => { owner.houses[k] = (owner.houses[k] || 0) + v; });
+          Object.entries(player.hotels || {}).forEach(([k, v]) => { if (v) owner.hotels[k] = true; });
           player.properties = [];
           player.houses = {};
           player.hotels = {};
@@ -523,6 +528,9 @@ export default function socketHandler(io) {
         if (!game) return typeof callback === 'function' && callback({ success: false, error: 'Game not found' });
         const player = game.players.find(p => p.id === currentPlayerId);
         if (!player) return typeof callback === 'function' && callback({ success: false, error: 'Player not found' });
+        if (game.turnPhase !== 'post_roll') return typeof callback === 'function' && callback({ success: false, error: 'Not the right time' });
+        if (player.paidRentThisTurn) return typeof callback === 'function' && callback({ success: false, error: 'Already paid this turn' });
+        player.paidRentThisTurn = true;
         const space = SPACES[player.position];
         if (!space || space.type !== 'tax') return typeof callback === 'function' && callback({ success: false, error: 'Not on a tax space' });
 
@@ -834,10 +842,14 @@ export default function socketHandler(io) {
         }
 
         player.isBankrupt = true;
-        player.properties.forEach(pid => {
-          if (owner) owner.properties.push(pid);
-        });
-        if (owner) owner.cash += player.cash;
+        if (owner) {
+          player.properties.forEach(pid => {
+            if (!owner.properties.includes(pid)) owner.properties.push(pid);
+          });
+          Object.entries(player.houses || {}).forEach(([k, v]) => { owner.houses[k] = (owner.houses[k] || 0) + v; });
+          Object.entries(player.hotels || {}).forEach(([k, v]) => { if (v) owner.hotels[k] = true; });
+          owner.cash += player.cash;
+        }
         player.cash = 0;
         player.properties = [];
         player.houses = {};

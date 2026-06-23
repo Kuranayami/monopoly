@@ -26,8 +26,8 @@ export default function Board({ game, playerId, cellSize = 72 }) {
   return (
     <View style={{
       position: 'relative', width: boardPx, height: boardPx,
-      background: 'rgba(255,255,255,0.02)', borderRadius: 8,
-      border: '2px solid rgba(245,158,11,0.2)',
+      background: '#1E1E1E', borderRadius: 8,
+      border: '2px solid rgba(59,130,246,0.2)',
     }}>
       {GRID_POSITIONS.map(({ pos, x, y }) => {
         const space = SPACES[pos];
@@ -60,7 +60,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                 )}
                 <Text style={{
                   fontSize: nameFs,
-                  color: 'rgba(255,255,255,0.7)',
+                  color: '#F0F0F0',
                   textAlign: 'center', lineHeight: 1.15, padding: '0 2px',
                   marginTop: 2, width: '100%',
                   wordBreak: 'break-word',
@@ -69,7 +69,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                 </Text>
                 {space.price > 0 && (
                   <Text style={{
-                    fontSize: priceFs, color: '#fbbf24',
+                    fontSize: priceFs, color: '#3B82F6',
                     textAlign: 'center', lineHeight: 1.1, marginTop: 1,
                   }}>
                     ${space.price}
@@ -77,7 +77,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                 )}
                 {owner && (
                   <Text style={{
-                    fontSize: Math.max(6, priceFs - 1), color: 'rgba(255,255,255,0.35)',
+                    fontSize: Math.max(6, priceFs - 1), color: '#A0A0A0',
                     textAlign: 'center', lineHeight: 1.1, marginTop: 1,
                   }}>
                     {owner.name}
@@ -86,7 +86,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                 {(hasHotel || houses > 0) && (
                   <Text style={{
                     fontSize: Math.max(8, cellSize * 0.09), lineHeight: 1.2, marginTop: 1,
-                    color: hasHotel ? '#ef4444' : '#fbbf24',
+                    color: '#3B82F6',
                   }}>
                     {hasHotel ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(houses)}
                   </Text>
@@ -95,7 +95,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
             )}
             {corner && space && (
               <Text style={{
-                fontSize: cornerFs, fontWeight: 700, color: '#fbbf24',
+                fontSize: cornerFs, fontWeight: 700, color: '#3B82F6',
                 textAlign: 'center', lineHeight: 1.2,
               }}>
                 {space.name}
@@ -110,7 +110,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
                   <Text key={i} style={{
                     fontSize: tokenSize + 2,
                     lineHeight: 1.2,
-                    filter: p.id === playerId ? 'drop-shadow(0 0 3px rgba(245,158,11,0.8))' : 'none',
+                    filter: p.id === playerId ? 'drop-shadow(0 0 3px rgba(59,130,246,0.8))' : 'none',
                   }}>
                     {TOKEN_ICONS[p.token] || '\u{1F3B1}'}
                   </Text>
@@ -130,7 +130,7 @@ export default function Board({ game, playerId, cellSize = 72 }) {
       }}>
         <Text style={{
           fontSize: Math.max(10, cellSize * 0.3), fontWeight: 800,
-          background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+          background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           opacity: 0.3, letterSpacing: 4,
         }}>

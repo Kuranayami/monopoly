@@ -74,10 +74,10 @@ export default function App() {
   }, [socket]);
 
   return (
-    <View style={{ width: '100%', height: '100dvh', background: 'linear-gradient(145deg, #060612, #0f0f28, #14143a, #0a0a1e)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <View style={{ width: '100%', height: '100dvh', background: '#121212', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {notification && (
-        <View style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2000, background: 'rgba(245,158,11,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '12px 24px', animation: 'fade-in-up 0.3s ease' }}>
-          <Text style={{ color: '#fbbf24', fontSize: 14, textAlign: 'center' }}>{notification}</Text>
+        <View style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2000, background: 'rgba(59,130,246,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 12, padding: '12px 24px', animation: 'fade-in-up 0.3s ease' }}>
+          <Text style={{ color: '#3B82F6', fontSize: 14, textAlign: 'center' }}>{notification}</Text>
         </View>
       )}
       {screen === 'lobby' && (

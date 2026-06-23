@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, Button, Input, Overlay, Scroller } from '../elements.jsx';
 import { SPACES, CHANCE, COMMUNITY_CHEST } from 'shared/constants.js';
 
-const GOLD = 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)';
+const ACCENT = '#3B82F6';
 
 export function CardModal({ card, onClose }) {
   if (!card) return null;
@@ -11,21 +11,21 @@ export function CardModal({ card, onClose }) {
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View onClick={e => e.stopPropagation()} style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 32, maxWidth: 360, width: '90%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       }}>
-        <Text style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12, textAlign: 'center' }}>
+        <Text style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12, textAlign: 'center' }}>
           Card
         </Text>
-        <Text style={{ fontSize: 18, color: '#fff', textAlign: 'center', lineHeight: 1.5, marginBottom: 20 }}>
+        <Text style={{ fontSize: 18, color: '#F0F0F0', textAlign: 'center', lineHeight: 1.5, marginBottom: 20 }}>
           {card.text}
         </Text>
         <Button onPress={onClose}
           style={{
             width: '100%', padding: '12px', borderRadius: 12, fontSize: 15, fontWeight: 700,
-            background: GOLD, color: '#060612',
+            background: ACCENT, color: '#F0F0F0',
           }}>
           OK
         </Button>
@@ -45,7 +45,7 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View onClick={e => e.stopPropagation()} style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 32, maxWidth: 360, width: '90%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
@@ -53,7 +53,7 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
         {space.color && (
           <View style={{ height: 6, background: space.color, borderRadius: 3, marginBottom: 16 }} />
         )}
-        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{space.name}</Text>
+        <Text style={{ fontSize: 18, fontWeight: 700, color: '#F0F0F0', marginBottom: 4 }}>{space.name}</Text>
         <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>
           {space.group?.replace('_', ' ')} • Price: ${space.price}
         </Text>
@@ -62,15 +62,15 @@ export function PropertyModal({ spaceId, onBuy, onAuction, game, playerId }) {
           <Button onPress={canAfford ? onBuy : null}
             style={{
               flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              background: canAfford ? GOLD : 'rgba(255,255,255,0.04)',
-              color: canAfford ? '#060612' : 'rgba(255,255,255,0.3)',
+              background: canAfford ? ACCENT : '#1E1E1E',
+              color: canAfford ? '#F0F0F0' : 'rgba(255,255,255,0.3)',
             }}>
             {canAfford ? `Buy $${space.price}` : 'Can\'t Afford'}
           </Button>
           <Button onPress={onAuction}
             style={{
               flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              background: 'rgba(255,255,255,0.06)', color: '#fff',
+              background: 'rgba(255,255,255,0.06)', color: '#F0F0F0',
               border: '1px solid rgba(255,255,255,0.1)',
             }}>
             Auction
@@ -114,23 +114,23 @@ export function AuctionModal({ auction, game, playerId, socket }) {
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 32, maxWidth: 360, width: '90%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       }}>
-        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Auction</Text>
-        <Text style={{ fontSize: 14, color: '#fbbf24', marginBottom: 4 }}>{space?.name}</Text>
+        <Text style={{ fontSize: 18, fontWeight: 700, color: '#F0F0F0', marginBottom: 4 }}>Auction</Text>
+        <Text style={{ fontSize: 14, color: '#3B82F6', marginBottom: 4 }}>{space?.name}</Text>
         <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
           Starting price: ${space?.price || 0}
         </Text>
 
-        <Text style={{ fontSize: 20, fontWeight: 700, color: timer <= 1 ? '#ef4444' : '#fbbf24', textAlign: 'center', marginBottom: 12 }}>
+        <Text style={{ fontSize: 20, fontWeight: 700, color: timer <= 1 ? '#3B82F6' : '#3B82F6', textAlign: 'center', marginBottom: 12 }}>
           {timer > 0 ? `${timer}s` : 'Time\'s up!'}
         </Text>
 
         <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
-          Current bid: <Text style={{ color: '#fbbf24', fontWeight: 700 }}>${auction.currentBid}</Text>
+          Current bid: <Text style={{ color: '#3B82F6', fontWeight: 700 }}>${auction.currentBid}</Text>
         </Text>
         {highestBidder && (
           <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>
@@ -147,15 +147,15 @@ export function AuctionModal({ auction, game, playerId, socket }) {
             placeholderTextColor="rgba(255,255,255,0.2)"
             style={{
               flex: 1, padding: '10px 14px', fontSize: 14,
-              background: 'rgba(255,255,255,0.04)', borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+              background: '#1E1E1E', borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
             }}
           />
           <Button onPress={placeBid}
             style={{
               padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700,
-              background: canBid ? GOLD : 'rgba(255,255,255,0.04)',
-              color: canBid ? '#060612' : 'rgba(255,255,255,0.3)',
+              background: canBid ? ACCENT : '#1E1E1E',
+              color: canBid ? '#F0F0F0' : 'rgba(255,255,255,0.3)',
             }}>
             Bid
           </Button>
@@ -183,11 +183,11 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
       <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
         <View style={{
           animation: 'modal-enter 0.3s ease',
-          background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+          background: '#1E1E1E', backdropFilter: 'blur(20px)',
           borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
           padding: 32, maxWidth: 360, width: '90%', textAlign: 'center',
         }}>
-          <Text style={{ fontSize: 18, fontWeight: 700, color: '#ef4444', marginBottom: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: 700, color: '#3B82F6', marginBottom: 12 }}>
             Declare Bankruptcy?
           </Text>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 16, lineHeight: 1.5 }}>
@@ -197,11 +197,11 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
           </Text>
           <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
             <Button onPress={() => { setConfirming(false); onBankrupt(); }}
-              style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+              style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#3B82F6', color: '#F0F0F0' }}>
               Yes, Declare
             </Button>
             <Button onPress={() => setConfirming(false)}
-              style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+              style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#F0F0F0' }}>
               Cancel
             </Button>
           </View>
@@ -214,11 +214,11 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 32, maxWidth: 360, width: '90%',
       }}>
-        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+        <Text style={{ fontSize: 18, fontWeight: 700, color: '#F0F0F0', marginBottom: 8 }}>
           {isTax ? 'Tax Due!' : 'Rent Due!'}
         </Text>
         {space && (
@@ -226,7 +226,7 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
             {space.name}
           </Text>
         )}
-        <Text style={{ fontSize: 24, fontWeight: 800, color: '#ef4444', marginBottom: 16 }}>
+        <Text style={{ fontSize: 24, fontWeight: 800, color: '#3B82F6', marginBottom: 16 }}>
           ${payAmount}
         </Text>
         <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>
@@ -237,7 +237,7 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
             <Button onPress={onPay}
               style={{
                 width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-                background: GOLD, color: '#060612',
+                background: ACCENT, color: '#F0F0F0',
               }}>
               Pay ${payAmount}
             </Button>
@@ -255,7 +255,7 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
           <Button onPress={() => setConfirming(true)}
             style={{
               width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+              background: 'rgba(59,130,246,0.15)', color: '#3B82F6',
               border: '1px solid rgba(239,68,68,0.3)',
             }}>
             Declare Bankruptcy
@@ -282,14 +282,14 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View onClick={e => e.stopPropagation()} style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 32, maxWidth: 360, width: '90%',
       }}>
         {space.color && (
           <View style={{ height: 6, background: space.color, borderRadius: 3, marginBottom: 16 }} />
         )}
-        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>{space.name}</Text>
+        <Text style={{ fontSize: 18, fontWeight: 700, color: '#F0F0F0', marginBottom: 8 }}>{space.name}</Text>
         {canBuild && (
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
             {hasHotel ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(houses || 0)} {hasHotel ? 'Hotel' : `${houses} house${houses !== 1 ? 's' : ''}`} • Build Cost: ${space.buildCost}
@@ -304,7 +304,7 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
               <Button onPress={() => { onBuildHouse(spaceId); onClose(); }}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-                  background: GOLD, color: '#060612',
+                  background: ACCENT, color: '#F0F0F0',
                 }}>
                 Build House (${space.buildCost})
               </Button>
@@ -313,7 +313,7 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
               <Button onPress={() => { onBuildHotel(spaceId); onClose(); }}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-                  background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff',
+                  background: '#3B82F6', color: '#F0F0F0',
                 }}>
                 Build Hotel (${space.buildCost})
               </Button>
@@ -322,7 +322,7 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
               <Button onPress={() => { onSell(spaceId); onClose(); }}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-                  background: 'rgba(255,255,255,0.06)', color: '#fff',
+                  background: 'rgba(255,255,255,0.06)', color: '#F0F0F0',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}>
                 Sell House (${Math.floor(space.buildCost / 2)})
@@ -336,7 +336,7 @@ export function BuildingsModal({ spaceId, onBuildHouse, onBuildHotel, onSell, on
               <Button onPress={() => { onMortgage(spaceId); onClose(); }}
                 style={{
                   width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-                  background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                  background: 'rgba(59,130,246,0.15)', color: '#3B82F6',
                   border: '1px solid rgba(239,68,68,0.3)',
                 }}>
                 Mortgage (${mortgageValue})
@@ -400,11 +400,11 @@ export function TradeModal({ game, playerId, socket, onClose }) {
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View onClick={e => e.stopPropagation()} style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 24, maxWidth: 400, width: '90%', maxHeight: '80vh',
       }}>
-        <Text style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 16 }}>Trade</Text>
+        <Text style={{ fontSize: 18, fontWeight: 700, color: '#F0F0F0', marginBottom: 16 }}>Trade</Text>
 
         {step === 'select' && (
           <>
@@ -413,7 +413,7 @@ export function TradeModal({ game, playerId, socket, onClose }) {
               <Button key={p.id} onPress={() => { setTargetId(p.id); setStep('details'); }}
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 12, fontSize: 14,
-                  background: 'rgba(255,255,255,0.04)', color: '#fff',
+                  background: '#1E1E1E', color: '#F0F0F0',
                   border: '1px solid rgba(255,255,255,0.08)', marginBottom: 8,
                   textAlign: 'left',
                 }}>
@@ -425,7 +425,7 @@ export function TradeModal({ game, playerId, socket, onClose }) {
 
         {step === 'details' && (
           <Scroller style={{ maxHeight: '60vh' }}>
-            <Text style={{ fontSize: 13, color: '#fbbf24', fontWeight: 600, marginBottom: 8 }}>
+            <Text style={{ fontSize: 13, color: '#3B82F6', fontWeight: 600, marginBottom: 8 }}>
               You give:
             </Text>
             <View style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -436,14 +436,14 @@ export function TradeModal({ game, playerId, socket, onClose }) {
                   <Button key={pid} onPress={() => toggleOfferProp(pid)}
                     style={{
                       padding: '4px 8px', borderRadius: 8, fontSize: 11,
-                      background: selected ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.04)',
-                      border: selected ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
-                      color: selected ? '#fbbf24' : 'rgba(255,255,255,0.6)',
+                      background: selected ? 'rgba(59,130,246,0.2)' : '#1E1E1E',
+                      border: selected ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.08)',
+                      color: selected ? '#3B82F6' : 'rgba(255,255,255,0.6)',
                       display: 'flex', alignItems: 'center', gap: 4,
                     }}>
                     {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
                     {s?.name || `Space ${pid}`}
-                    {player?.mortgaged?.includes(pid) && <Text style={{ fontSize: 9, color: '#ef4444' }}> (M)</Text>}
+                    {player?.mortgaged?.includes(pid) && <Text style={{ fontSize: 9, color: '#3B82F6' }}> (M)</Text>}
                   </Button>
                 );
               })}
@@ -455,8 +455,8 @@ export function TradeModal({ game, playerId, socket, onClose }) {
               placeholderTextColor="rgba(255,255,255,0.2)"
               style={{
                 width: '100%', padding: '8px 12px', fontSize: 13, marginBottom: 8,
-                background: 'rgba(255,255,255,0.04)', borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+                background: '#1E1E1E', borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
               }}
             />
             <Input
@@ -466,12 +466,12 @@ export function TradeModal({ game, playerId, socket, onClose }) {
               placeholderTextColor="rgba(255,255,255,0.2)"
               style={{
                 width: '100%', padding: '8px 12px', fontSize: 13, marginBottom: 16,
-                background: 'rgba(255,255,255,0.04)', borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+                background: '#1E1E1E', borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
               }}
             />
 
-            <Text style={{ fontSize: 13, color: '#fbbf24', fontWeight: 600, marginBottom: 8 }}>
+            <Text style={{ fontSize: 13, color: '#3B82F6', fontWeight: 600, marginBottom: 8 }}>
               You receive:
             </Text>
             <View style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -483,14 +483,14 @@ export function TradeModal({ game, playerId, socket, onClose }) {
                   <Button key={pid} onPress={() => toggleRequestProp(pid)}
                     style={{
                       padding: '4px 8px', borderRadius: 8, fontSize: 11,
-                      background: selected ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.04)',
-                      border: selected ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.08)',
-                      color: selected ? '#fbbf24' : 'rgba(255,255,255,0.6)',
+                      background: selected ? 'rgba(59,130,246,0.2)' : '#1E1E1E',
+                      border: selected ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.08)',
+                      color: selected ? '#3B82F6' : 'rgba(255,255,255,0.6)',
                       display: 'flex', alignItems: 'center', gap: 4,
                     }}>
                     {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
                     {s?.name || `Space ${pid}`}
-                    {target?.mortgaged?.includes(pid) && <Text style={{ fontSize: 9, color: '#ef4444' }}> (M)</Text>}
+                    {target?.mortgaged?.includes(pid) && <Text style={{ fontSize: 9, color: '#3B82F6' }}> (M)</Text>}
                   </Button>
                 );
               })}
@@ -502,8 +502,8 @@ export function TradeModal({ game, playerId, socket, onClose }) {
               placeholderTextColor="rgba(255,255,255,0.2)"
               style={{
                 width: '100%', padding: '8px 12px', fontSize: 13, marginBottom: 8,
-                background: 'rgba(255,255,255,0.04)', borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+                background: '#1E1E1E', borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
               }}
             />
             <Input
@@ -513,16 +513,16 @@ export function TradeModal({ game, playerId, socket, onClose }) {
               placeholderTextColor="rgba(255,255,255,0.2)"
               style={{
                 width: '100%', padding: '8px 12px', fontSize: 13, marginBottom: 16,
-                background: 'rgba(255,255,255,0.04)', borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.08)', color: '#fff',
+                background: '#1E1E1E', borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.08)', color: '#F0F0F0',
               }}
             />
 
             <Button onPress={handlePropose}
               style={{
                 width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                color: '#060612',
+                background: '#3B82F6',
+                color: '#F0F0F0',
               }}>
               Propose Trade
             </Button>
@@ -542,15 +542,15 @@ export function PlayerPropsModal({ game, playerId, onClose, onSelectProp }) {
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View onClick={e => e.stopPropagation()} style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 24, maxWidth: 360, width: '90%', maxHeight: '70vh',
       }}>
-        <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>
+        <Text style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F0', marginBottom: 12 }}>
           {player.name}'s Properties
         </Text>
         {player.getOutOfJailCards > 0 && (
-          <Text style={{ fontSize: 12, color: '#fbbf24', marginBottom: 10 }}>
+          <Text style={{ fontSize: 12, color: '#3B82F6', marginBottom: 10 }}>
             🃏 {player.getOutOfJailCards} Get Out of Jail Free Card{player.getOutOfJailCards > 1 ? 's' : ''}
           </Text>
         )}
@@ -561,11 +561,11 @@ export function PlayerPropsModal({ game, playerId, onClose, onSelectProp }) {
               <Button key={pid} onPress={() => { onSelectProp?.(pid); onClose?.(); }}
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 12, fontSize: 13,
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                  marginBottom: 6, color: '#fff', textAlign: 'left',
+                  background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.08)',
+                  marginBottom: 6, color: '#F0F0F0', textAlign: 'left',
                   display: 'flex', justifyContent: 'space-between',
                 }}>
-                <Text style={{ fontSize: 13, color: '#fff' }}>{s?.name}</Text>
+                <Text style={{ fontSize: 13, color: '#F0F0F0' }}>{s?.name}</Text>
                 <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                   {player.hotels?.[pid] ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(player.houses?.[pid] || 0)}
                 </Text>
@@ -589,20 +589,20 @@ export function TradeProposalModal({ proposal, game, playerId, onAccept, onDecli
     const owner = game?.players?.find(p => p.id === ownerId);
     return (
     <View style={{ marginBottom: 12 }}>
-      <Text style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600, marginBottom: 4 }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, marginBottom: 4 }}>{label}</Text>
       {(assets.properties || []).map(pid => {
         const s = SPACES[pid];
         const isMortgaged = owner?.mortgaged?.includes(pid);
         return (
           <View key={pid} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
             {s?.color && <View style={{ width: 6, height: 14, borderRadius: 2, background: s.color, flexShrink: 0 }} />}
-            <Text style={{ fontSize: 12, color: '#fff' }}>{s?.name || `Space ${pid}`}</Text>
-            {isMortgaged && <Text style={{ fontSize: 10, color: '#ef4444' }}>(M)</Text>}
+            <Text style={{ fontSize: 12, color: '#F0F0F0' }}>{s?.name || `Space ${pid}`}</Text>
+            {isMortgaged && <Text style={{ fontSize: 10, color: '#3B82F6' }}>(M)</Text>}
           </View>
         );
       })}
-      {assets.cash > 0 && <Text style={{ fontSize: 12, color: '#fff' }}>  ${assets.cash}</Text>}
-      {assets.jailCards > 0 && <Text style={{ fontSize: 12, color: '#fff' }}>  {assets.jailCards} Jail Card(s)</Text>}
+      {assets.cash > 0 && <Text style={{ fontSize: 12, color: '#F0F0F0' }}>  ${assets.cash}</Text>}
+      {assets.jailCards > 0 && <Text style={{ fontSize: 12, color: '#F0F0F0' }}>  {assets.jailCards} Jail Card(s)</Text>}
       {!assets.properties?.length && !assets.cash && !assets.jailCards && (
         <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>  Nothing</Text>
       )}
@@ -614,12 +614,12 @@ export function TradeProposalModal({ proposal, game, playerId, onAccept, onDecli
     <Overlay style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
       <View style={{
         animation: 'modal-enter 0.3s ease',
-        background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+        background: '#1E1E1E', backdropFilter: 'blur(20px)',
         borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
         padding: 24, maxWidth: 360, width: '90%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       }}>
-        <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>
+        <Text style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F0', marginBottom: 12 }}>
           Trade from {proposal.fromName}
         </Text>
         {renderAssetList(proposal.offer, `${proposal.fromName} gives:`, proposal.fromId)}
@@ -628,14 +628,14 @@ export function TradeProposalModal({ proposal, game, playerId, onAccept, onDecli
           <Button onPress={onAccept}
             style={{
               flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#fff',
+              background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#F0F0F0',
             }}>
             Accept
           </Button>
           <Button onPress={onDecline}
             style={{
               flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-              background: 'rgba(255,255,255,0.06)', color: '#fff',
+              background: 'rgba(255,255,255,0.06)', color: '#F0F0F0',
               border: '1px solid rgba(255,255,255,0.1)',
             }}>
             Decline

@@ -34,8 +34,8 @@ export default function Dice({ dice, rolling, onRoll, canRoll }) {
             <Button onPress={onRoll}
               style={{
                 padding: '10px 24px', borderRadius: 12, fontSize: 15, fontWeight: 700,
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
-                color: '#060612', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+                background: '#3B82F6',
+                color: '#F0F0F0', boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
                 animation: 'pulse-glow 2s infinite',
               }}>
               Roll Dice

@@ -263,13 +263,13 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <>
           <Button onPress={handlePayBail}
             style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#060612' }}>
+              background: '#3B82F6', color: '#F0F0F0' }}>
             Pay $50 Bail
           </Button>
           {player.getOutOfJailCards > 0 && (
             <Button onPress={handleUseJailCard}
               style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.1)' }}>
               Use Jail Card ({player.getOutOfJailCards})
             </Button>
           )}
@@ -279,8 +279,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <Button onPress={handleEndTurn}
           style={{
             padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-            background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
-            color: '#060612', boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
+            background: '#3B82F6',
+            color: '#F0F0F0', boxShadow: '0 4px 16px rgba(59,130,246,0.3)',
           }}>
           End Turn
         </Button>
@@ -289,8 +289,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <Button onPress={handleEndTurn}
           style={{
             padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-            background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
-            color: '#060612', boxShadow: '0 4px 16px rgba(245,158,11,0.3)',
+            background: '#3B82F6',
+            color: '#F0F0F0', boxShadow: '0 4px 16px rgba(59,130,246,0.3)',
             animation: 'pulse-glow 2s infinite',
           }}>
           Roll Again
@@ -300,8 +300,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <Button onPress={handleDrawCard}
           style={{
             padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 700,
-            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-            color: '#fff', boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
+            background: '#3B82F6',
+            color: '#F0F0F0', boxShadow: '0 4px 16px rgba(59,130,246,0.3)',
             animation: 'pulse-glow 2s infinite',
           }}>
           Draw Card
@@ -318,25 +318,25 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <View style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <View style={{
             width: isMobile ? '92%' : 400,
-            background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
+            background: '#1E1E1E', backdropFilter: 'blur(20px)',
             borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)',
             padding: 32, animation: 'fade-in-up 0.5s ease',
           }}>
-            <Text style={{ fontSize: 24, fontWeight: 800, textAlign: 'center', color: '#fbbf24', marginBottom: 4 }}>
+            <Text style={{ fontSize: 24, fontWeight: 800, textAlign: 'center', color: '#3B82F6', marginBottom: 4 }}>
               Room: {game.roomCode}
             </Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 20 }}>
+            <Text style={{ fontSize: 13, color: '#A0A0A0', textAlign: 'center', marginBottom: 20 }}>
               Waiting for players... {game.players.length}/6
             </Text>
             <View style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {game.players.map(p => (
                 <View key={p.id} style={{
                   padding: '10px 14px', borderRadius: 12,
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                  background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.06)',
                   display: 'flex', justifyContent: 'space-between',
                 }}>
-                  <Text style={{ fontSize: 14, color: '#fff', fontWeight: 600 }}>{p.name}</Text>
-                  <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{p.token}</Text>
+                  <Text style={{ fontSize: 14, color: '#F0F0F0', fontWeight: 600 }}>{p.name}</Text>
+                  <Text style={{ fontSize: 12, color: '#A0A0A0' }}>{p.token}</Text>
                 </View>
               ))}
             </View>
@@ -344,8 +344,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               <Button onPress={handleHostStart}
                 style={{
                   width: '100%', padding: '14px', borderRadius: 14, fontSize: 16, fontWeight: 700,
-                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
-                  color: '#060612', boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+                  background: '#3B82F6',
+                  color: '#F0F0F0', boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
                   animation: 'pulse-glow 2s infinite',
                 }}>
                 Start Game
@@ -354,7 +354,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             <Button onPress={handleLeaveClick}
               style={{
                 width: '100%', padding: '10px', borderRadius: 12, fontSize: 13,
-                background: 'transparent', color: 'rgba(255,255,255,0.4)', marginTop: 8,
+                background: 'transparent', color: '#A0A0A0', marginTop: 8,
               }}>
               Leave Room
             </Button>
@@ -367,15 +367,15 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
               padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
             }}>
-              <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
+              <Text style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F0', marginBottom: 12 }}>Leave game?</Text>
               <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
               <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
                 <Button onPress={handleLeaveConfirm}
-                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#3B82F6', color: '#F0F0F0' }}>
                   Leave
                 </Button>
                 <Button onPress={handleLeaveCancel}
-                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#F0F0F0' }}>
                   Cancel
                 </Button>
               </View>
@@ -390,19 +390,19 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     return (
       <View style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <View style={{
-          background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
+          background: '#1E1E1E', backdropFilter: 'blur(20px)',
           borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)',
           padding: 40, textAlign: 'center',
           animation: 'fade-in-up 0.5s ease',
         }}>
-          <Text style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 8 }}>
+          <Text style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, #3B82F6, #2563EB)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 8 }}>
             Game Over!
           </Text>
-          <Text style={{ fontSize: 20, color: '#fff', marginBottom: 20 }}>
+          <Text style={{ fontSize: 20, color: '#F0F0F0', marginBottom: 20 }}>
             {game.winner} wins!
           </Text>
           <Button onPress={onLeave}
-            style={{ padding: '14px 32px', borderRadius: 14, fontSize: 16, fontWeight: 700, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#060612' }}>
+            style={{ padding: '14px 32px', borderRadius: 14, fontSize: 16, fontWeight: 700, background: '#3B82F6', color: '#F0F0F0' }}>
             Back to Lobby
           </Button>
         </View>
@@ -416,17 +416,17 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <View style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '8px 12px',
-          background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: '#1E1E1E', borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
-          <Text style={{ fontSize: 12, color: '#fbbf24', fontWeight: 700 }}>{game.roomCode}</Text>
-          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Turn: {game.players[game.currentTurn]?.name}</Text>
+          <Text style={{ fontSize: 12, color: '#3B82F6', fontWeight: 700 }}>{game.roomCode}</Text>
+          <Text style={{ fontSize: 11, color: '#A0A0A0' }}>Turn: {game.players[game.currentTurn]?.name}</Text>
           <View style={{ display: 'flex', gap: 8 }}>
             <Button onPress={() => setShowChat(!showChat)}
-              style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+              style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, background: '#1E1E1E', color: '#F0F0F0' }}>
               {showChat ? 'Board' : 'Chat'}
             </Button>
             <Button onPress={handleLeaveClick}
-              style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>
+              style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, background: '#1E1E1E', color: '#A0A0A0' }}>
               Leave
             </Button>
           </View>
@@ -452,8 +452,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             </View>
 
             <View style={{
-              background: 'rgba(15,15,40,0.95)', backdropFilter: 'blur(20px)',
-              borderTop: '1px solid rgba(255,255,255,0.08)',
+              background: '#1E1E1E', backdropFilter: 'blur(20px)',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
               padding: '8px 12px',
               paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
             }}>
@@ -461,16 +461,16 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               <View style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginTop: 6 }}>
                 {isMyTurn && phase === 'post_roll' && (
                   <Button onPress={handleBuyProperty}
-                    style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>
+                    style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>
                     Buy Property
                   </Button>
                 )}
                 <Button onPress={() => setPropsModal(playerId)}
-                  style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>
                   My Props ({playerProps.length})
                 </Button>
                 <Button onPress={() => setTradeModal(true)}
-                  style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>
+                  style={{ padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>
                   Trade
                 </Button>
               </View>
@@ -489,19 +489,19 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {leaveConfirm && (
           <Overlay>
             <View style={{
-              background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
+              background: '#1E1E1E', backdropFilter: 'blur(20px)',
               borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
               padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
             }}>
-              <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
-              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
+              <Text style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F0', marginBottom: 12 }}>Leave game?</Text>
+              <Text style={{ fontSize: 13, color: '#A0A0A0', marginBottom: 16 }}>Are you sure?</Text>
               <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
                 <Button onPress={handleLeaveConfirm}
-                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#3B82F6', color: '#F0F0F0' }}>
                   Leave
                 </Button>
                 <Button onPress={handleLeaveCancel}
-                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.1)' }}>
                   Cancel
                 </Button>
               </View>
@@ -518,14 +518,14 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {sidePanel(
         <>
           <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: 800, color: '#fbbf24' }}>{game.roomCode}</Text>
-            <Button onPress={handleLeaveClick} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>Leave</Button>
+            <Text style={{ fontSize: 16, fontWeight: 800, color: '#3B82F6' }}>{game.roomCode}</Text>
+            <Button onPress={handleLeaveClick} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, background: '#1E1E1E', color: '#A0A0A0' }}>Leave</Button>
           </View>
           <PlayerList game={game} playerId={playerId} />
           <View style={{ height: 8 }} />
-          <View style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>Last Action</Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{game.lastAction || 'Game started'}</Text>
+          <View style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
+            <Text style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>Last Action</Text>
+            <Text style={{ fontSize: 13, color: '#F0F0F0' }}>{game.lastAction || 'Game started'}</Text>
           </View>
         </>
       )}
@@ -537,10 +537,10 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {gameActions}
         <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           {isMyTurn && phase === 'post_roll' && (
-            <Button onPress={handleBuyProperty} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>Buy Property</Button>
+            <Button onPress={handleBuyProperty} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>Buy Property</Button>
           )}
-          <Button onPress={() => setPropsModal(playerId)} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>My Props ({playerProps.length})</Button>
-          <Button onPress={() => setTradeModal(true)} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,0.08)', color: '#fff' }}>Trade</Button>
+          <Button onPress={() => setPropsModal(playerId)} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>My Props ({playerProps.length})</Button>
+          <Button onPress={() => setTradeModal(true)} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>Trade</Button>
         </View>
       </View>
 
@@ -548,8 +548,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <>
           <ChatPanel game={game} playerId={playerId} socket={socket} />
           <View style={{ height: 8 }} />
-          <View style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, background: 'rgba(255,255,255,0.03)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>My Properties ({myProps.length})</Text>
+          <View style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
+            <Text style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>My Properties ({myProps.length})</Text>
             <Scroller style={{ flex: 1, minHeight: 0 }}>
               <View style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {myProps.map(s => (
@@ -557,7 +557,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
                     <PropertyCard spaceId={s.id} player={player} />
                   </Button>
                 ))}
-                {myProps.length === 0 && <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>No properties yet</Text>}
+                {myProps.length === 0 && <Text style={{ fontSize: 12, color: '#A0A0A0' }}>No properties yet</Text>}
               </View>
             </Scroller>
           </View>
@@ -572,28 +572,28 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
       {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
       {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
-      {leaveConfirm && (
-        <Overlay>
-          <View style={{
-            background: 'rgba(20,20,40,0.95)', backdropFilter: 'blur(20px)',
-            borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
-            padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
-          }}>
-            <Text style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Leave game?</Text>
-            <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Are you sure?</Text>
-            <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
-              <Button onPress={handleLeaveConfirm}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#ef4444', color: '#fff' }}>
-                Leave
-              </Button>
-              <Button onPress={handleLeaveCancel}
-                style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
-                Cancel
-              </Button>
+        {leaveConfirm && (
+          <Overlay>
+            <View style={{
+              background: '#1E1E1E', backdropFilter: 'blur(20px)',
+              borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)',
+              padding: 24, maxWidth: 300, width: '90%', textAlign: 'center',
+            }}>
+              <Text style={{ fontSize: 16, fontWeight: 700, color: '#F0F0F0', marginBottom: 12 }}>Leave game?</Text>
+              <Text style={{ fontSize: 13, color: '#A0A0A0', marginBottom: 16 }}>Are you sure?</Text>
+              <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+                <Button onPress={handleLeaveConfirm}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#3B82F6', color: '#F0F0F0' }}>
+                  Leave
+                </Button>
+                <Button onPress={handleLeaveCancel}
+                  style={{ flex: 1, padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  Cancel
+                </Button>
+              </View>
             </View>
-          </View>
-        </Overlay>
-      )}
+          </Overlay>
+        )}
     </View>
   );
 }
