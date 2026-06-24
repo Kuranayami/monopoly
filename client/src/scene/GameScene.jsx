@@ -3,10 +3,8 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { SPACES } from 'shared/constants.js';
 import { BOARD, CORNER } from './boardLayout.js';
 import Board3D from './Board3D.jsx';
-import Dice3D from './Dice3D.jsx';
 import Token3D from './Token3D.jsx';
 import CameraController from './CameraController.jsx';
 import WeatherSystem from './WeatherSystem.jsx';
@@ -108,38 +106,13 @@ function getWeatherState(game) {
   return 'clear';
 }
 
-export default function GameScene({ game, playerId, rolling, dice, animState, cinematicEvent, visualPositions = {} }) {
+export default function GameScene({ game, playerId, animState, cinematicEvent, visualPositions = {} }) {
   const controlsRef = useRef(null);
   const canvasRef = useRef(null);
   const [camPhase, setCamPhase] = useState('idle');
-  const [launchDice, setLaunchDice] = useState(false);
-  const [landingPos, setLandingPos] = useState(null);
-  const [rollKey, setRollKey] = useState(0);
   const [initialized, setInitialized] = useState(false);
-  // safeDice prevents Dice3D from reading stale game.dice values when a new roll starts.
-  // game.dice may hold a previous roll's values briefly during the rolling→rollKey race,
-  // so we explicitly clear it on rolling and only set from confirmed dice.
-  const [safeDice, setSafeDice] = useState(null);
 
   useEffect(() => { setInitialized(true); }, []);
-
-  useEffect(() => {
-    if (rolling) { setCamPhase('throw'); setLaunchDice(true); setLandingPos(null); setRollKey(k => k + 1); setSafeDice(null); }
-  }, [rolling]);
-
-  useEffect(() => {
-    if (dice && dice.length === 2) setSafeDice(dice);
-  }, [dice]);
-
-  useEffect(() => {
-    if (safeDice && safeDice.length === 2 && !rolling && camPhase === 'throw') {
-      const isDbl = safeDice[0] === safeDice[1];
-      setCamPhase(isDbl ? 'doubles' : 'land');
-      const p = game?.players?.[game?.currentTurn];
-      if (p && !p.isBankrupt) { setLandingPos(p.position); setTimeout(() => setLandingPos(null), 2000); }
-      setTimeout(() => { setCamPhase('idle'); setLaunchDice(false); }, isDbl ? 2500 : 1200);
-    }
-  }, [safeDice, rolling, camPhase, game]);
 
   useEffect(() => {
     if (animState?.speedWarning) { setCamPhase('speeding'); setTimeout(() => setCamPhase('idle'), 2000); }
@@ -151,8 +124,6 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
 
   const weather = getWeatherState(game);
   const players = game?.players?.filter(p => !p.isBankrupt) || [];
-  const isDoubles = safeDice && safeDice.length === 2 && safeDice[0] === safeDice[1] && !rolling;
-  const isSpeeding = !!animState?.speedWarning;
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'relative' }}>
@@ -182,13 +153,9 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
             <Board3D game={game} />
             <BoardCollider />
             <CardDeckColliders />
-            <Dice3D key={`d0-${rollKey}`} diceLayout={0} targetValue={safeDice?.[0]}
-              launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
-            <Dice3D key={`d1-${rollKey}`} diceLayout={1} targetValue={safeDice?.[1]}
-              launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
           </Physics>
 
-          <GridBloom landingPos={landingPos} group={landingPos !== null ? SPACES[landingPos]?.group : null} />
+          <GridBloom />
           <BuildingSystem game={game} animState={animState || {}} />
           <BoardParticles />
 
