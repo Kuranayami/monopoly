@@ -122,65 +122,74 @@ function DiceLightTrail({ position, active }) {
 export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles, isSpeeding }) {
   const rigidRef = useRef(null);
   const launchedRef = useRef(false);
-  const snappedRef = useRef(false);
   const snapTimerRef = useRef(null);
+  const pendingValueRef = useRef(null);
   const glowRef = useRef(null);
-
-  useEffect(() => {
-    if (!rigidRef.current) return;
-    if (!launch) {
-      // Reset when roll cycle ends so next launch works
-      launchedRef.current = false;
-      snappedRef.current = false;
-      return;
-    }
-    if (launchedRef.current) return;
-    // Cancel any pending snap from a previous roll
-    if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); snapTimerRef.current = null; }
-    launchedRef.current = true;
-    snappedRef.current = false;
-    const body = rigidRef.current;
-    const spinX = (Math.random() - 0.5) * 12;
-    const spinY = (Math.random() - 0.5) * 12;
-    const spinZ = (Math.random() - 0.5) * 12;
-    body.setTranslation({ x: 0, y: 2.5, z: 3 });
-    body.setLinvel({
-      x: (Math.random() - 0.5) * 4,
-      y: -5 + (Math.random() - 0.5) * 2,
-      z: -7 + (Math.random() - 0.5) * 2,
-    });
-    body.setAngvel({ x: spinX, y: spinY, z: spinZ });
-    body.wakeUp();
-  }, [launch]);
 
   // Reusable temp objects for quaternion conversion
   const _euler = new THREE.Euler();
   const _quat = new THREE.Quaternion();
 
+  // Effect 1: launch + value tracking (runs when any dep changes)
   useEffect(() => {
-    if (!targetValue || !rigidRef.current || !launchedRef.current) return;
-    snappedRef.current = true;
+    if (!rigidRef.current) return;
+    if (!launch) {
+      launchedRef.current = false;
+      pendingValueRef.current = null;
+      return;
+    }
+    if (!launchedRef.current) {
+      // Rising edge of launch → do physics launch once
+      launchedRef.current = true;
+      pendingValueRef.current = targetValue;
+      const body = rigidRef.current;
+      const spinX = (Math.random() - 0.5) * 12;
+      const spinY = (Math.random() - 0.5) * 12;
+      const spinZ = (Math.random() - 0.5) * 12;
+      body.setTranslation({ x: 0, y: 2.5, z: 3 });
+      body.setLinvel({
+        x: (Math.random() - 0.5) * 4,
+        y: -5 + (Math.random() - 0.5) * 2,
+        z: -7 + (Math.random() - 0.5) * 2,
+      });
+      body.setAngvel({ x: spinX, y: spinY, z: spinZ });
+      body.wakeUp();
+    } else if (targetValue) {
+      // Already launched — update value (may arrive after launch)
+      pendingValueRef.current = targetValue;
+    }
+  }, [launch, targetValue, diceLayout]);
+
+  // Effect 2: snap timer — only depends on `launch`,
+  // so targetValue changes don't cancel/reschedule the timer
+  useEffect(() => {
+    if (!launch || !rigidRef.current) return;
+    // Cancel any leftover timer from previous roll
+    if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); }
+
     snapTimerRef.current = setTimeout(() => {
-      if (rigidRef.current) {
-        // Find which face shows targetValue and rotate that face to +y
-        const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
-        let face = 'up';
-        for (const [f, v] of Object.entries(layout)) {
-          if (v === targetValue) { face = f; break; }
-        }
-        const rot = FACE_ROTATIONS[face] || [0, 0, 0];
-        // Convert Euler → Quaternion for Rapier, then freeze body
-        _euler.set(rot[0], rot[1], rot[2], 'XYZ');
-        _quat.setFromEuler(_euler);
-        rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
-        rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
-        rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
-        rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
-        rigidRef.current.sleep();
+      if (!rigidRef.current) return;
+      const val = pendingValueRef.current;
+      if (!val) return;
+      const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
+      let face = 'up';
+      for (const [f, v] of Object.entries(layout)) {
+        if (v === val) { face = f; break; }
       }
-      }, 900);
-    return () => { if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); snapTimerRef.current = null; } };
-  }, [targetValue, diceLayout, launch]);
+      const rot = FACE_ROTATIONS[face] || [0, 0, 0];
+      _euler.set(rot[0], rot[1], rot[2], 'XYZ');
+      _quat.setFromEuler(_euler);
+      rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
+      rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
+      rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
+      rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
+      rigidRef.current.sleep();
+    }, 900);
+
+    return () => {
+      if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); snapTimerRef.current = null; }
+    };
+  }, [launch]);
 
   useFrame((_, delta) => {
     if (glowRef.current) {
