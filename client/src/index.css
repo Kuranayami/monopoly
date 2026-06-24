@@ -72,6 +72,322 @@ input, button, textarea {
   to { transform: translateY(0); }
 }
 
+/* === TOKEN ANIMATIONS === */
+@keyframes token-idle-top-hat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(-5deg); }
+  75% { transform: translateY(-2px) rotate(5deg); }
+}
+
+@keyframes token-idle-car {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+}
+
+@keyframes token-idle-dog {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-3px) rotate(-3deg); }
+  60% { transform: translateY(-1px) rotate(3deg); }
+}
+
+@keyframes token-idle-battleship {
+  0%, 50%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  75% { transform: translateY(1px); }
+}
+
+@keyframes token-idle-iron {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(15deg); }
+}
+
+@keyframes token-idle-thimble {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes token-wind-up {
+  0% { transform: scale(1) translateY(0); }
+  50% { transform: scale(0.8) translateY(-5px); }
+  100% { transform: scale(1.15) translateY(0); }
+}
+
+@keyframes token-dash {
+  0% { transform: scale(1.15) translateX(0); filter: brightness(1.5); }
+  30% { transform: scale(1.3) translateX(3px); filter: brightness(2); }
+  60% { transform: scale(1.15) translateX(-1px); filter: brightness(1.5); }
+  100% { transform: scale(1) translateX(0); filter: brightness(1); }
+}
+
+@keyframes token-impact {
+  0% { transform: scale(1.3); filter: brightness(2); }
+  40% { transform: scale(0.9); }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes token-collision {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(-6px) rotate(-5deg); }
+  40% { transform: translateX(4px) rotate(3deg); }
+  60% { transform: translateX(-2px) rotate(-2deg); }
+}
+
+/* === WEATHER EFFECTS === */
+@keyframes rain-drop {
+  0% { transform: translateY(-10px) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(100vh) translateX(-20px); opacity: 0; }
+}
+
+@keyframes lightning-flash {
+  0%, 100% { opacity: 0; }
+  5% { opacity: 0.6; }
+  10% { opacity: 0; }
+  15% { opacity: 0.3; }
+  20% { opacity: 0; }
+}
+
+@keyframes cloudy-drift {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.4; }
+  100% { transform: translateX(200%); opacity: 0; }
+}
+
+/* === GRID BLOOM === */
+@keyframes grid-ripple {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+  50% { box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+@keyframes grid-energy {
+  0% { background: rgba(59, 130, 246, 0); }
+  30% { background: rgba(59, 130, 246, 0.15); }
+  100% { background: rgba(59, 130, 246, 0); }
+}
+
+@keyframes pulse-energy {
+  0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(59, 130, 246, 0.3); }
+}
+
+/* === DICE ANIMATIONS === */
+@keyframes dice-micro-gravity {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  20% { transform: translateY(-60px) rotate(-30deg) scale(1.1); }
+  40% { transform: translateY(-30px) rotate(20deg) scale(0.95); }
+  60% { transform: translateY(-50px) rotate(-15deg) scale(1.05); }
+  80% { transform: translateY(-10px) rotate(5deg) scale(0.98); }
+  100% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+
+@keyframes dice-bounce {
+  0% { transform: translateY(-60px) rotate(-30deg); animation-timing-function: ease-in; }
+  30% { transform: translateY(0) rotate(10deg); animation-timing-function: ease-out; }
+  50% { transform: translateY(-30px) rotate(-20deg); animation-timing-function: ease-in; }
+  70% { transform: translateY(0) rotate(5deg); animation-timing-function: ease-out; }
+  85% { transform: translateY(-10px) rotate(-10deg); animation-timing-function: ease-in; }
+  100% { transform: translateY(0) rotate(0deg); animation-timing-function: ease-out; }
+}
+
+@keyframes dice-slide {
+  0% { transform: translateX(-80px) rotate(-45deg); opacity: 0; }
+  30% { transform: translateX(-20px) rotate(-20deg); opacity: 0.8; }
+  60% { transform: translateX(-5px) rotate(-5deg); opacity: 1; }
+  100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+@keyframes dice-light-trail {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
+  50% { box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.3), 0 0 30px 10px rgba(59, 130, 246, 0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+@keyframes doubles-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8); }
+  30% { transform: scale(1.15); box-shadow: 0 0 30px 10px rgba(59, 130, 246, 0.5); }
+  60% { transform: scale(1.05); box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.3); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+@keyframes time-slow-mo {
+  0%, 100% { filter: saturate(1); }
+  50% { filter: saturate(1.5) brightness(1.2); }
+}
+
+@keyframes speeding-warning {
+  0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.3); }
+  25% { box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.6); }
+  50% { box-shadow: 0 0 35px 10px rgba(239, 68, 68, 0.8); }
+  75% { box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0.5); }
+}
+
+@keyframes speeding-particle-0 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-30px, -40px) scale(0); opacity: 0; }
+}
+@keyframes speeding-particle-1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(40px, -20px) scale(0); opacity: 0; }
+}
+@keyframes speeding-particle-2 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-20px, 30px) scale(0); opacity: 0; }
+}
+@keyframes speeding-particle-3 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(35px, 25px) scale(0); opacity: 0; }
+}
+@keyframes speeding-particle-4 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-40px, 10px) scale(0); opacity: 0; }
+}
+@keyframes speeding-particle-5 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(20px, -35px) scale(0); opacity: 0; }
+}
+
+@keyframes camera-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(3px, -3px); }
+  30% { transform: translate(-3px, 1px); }
+  40% { transform: translate(2px, -2px); }
+  50% { transform: translate(-1px, 3px); }
+  60% { transform: translate(1px, -1px); }
+  70% { transform: translate(-2px, 0); }
+  80% { transform: translate(0, 1px); }
+  90% { transform: translate(1px, -1px); }
+}
+
+/* === BUILDING ANIMATIONS === */
+@keyframes house-construct {
+  0% { transform: scale(0) translateY(20px); opacity: 0; }
+  40% { transform: scale(1.2) translateY(-5px); opacity: 1; }
+  70% { transform: scale(0.95) translateY(2px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+@keyframes house-demolish {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1) rotate(10deg); opacity: 0.7; }
+  100% { transform: scale(0) translateY(30px) rotate(20deg); opacity: 0; }
+}
+
+@keyframes hotel-rise {
+  0% { transform: scale(0) translateY(40px); opacity: 0; filter: brightness(0.3); }
+  50% { transform: scale(1.1) translateY(-10px); opacity: 1; filter: brightness(1.5); }
+  80% { transform: scale(0.97) translateY(2px); }
+  100% { transform: scale(1) translateY(0); filter: brightness(1); }
+}
+
+@keyframes building-dust-0 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  100% { transform: translate(-20px, -30px) scale(0); opacity: 0; }
+}
+@keyframes building-dust-1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  100% { transform: translate(-5px, -35px) scale(0); opacity: 0; }
+}
+@keyframes building-dust-2 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  100% { transform: translate(10px, -40px) scale(0); opacity: 0; }
+}
+@keyframes building-dust-3 {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  100% { transform: translate(25px, -45px) scale(0); opacity: 0; }
+}
+
+@keyframes construction-drone {
+  0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+  20% { transform: translateY(0) scale(1); opacity: 1; }
+  80% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+}
+
+/* === MORTGAGE EFFECTS === */
+@keyframes mortgage-desaturate {
+  0% { filter: grayscale(0) brightness(1); }
+  100% { filter: grayscale(1) brightness(0.6); }
+}
+
+@keyframes mortgage-barricade {
+  0% { transform: scaleX(0); opacity: 0; }
+  50% { transform: scaleX(1.1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0.9; }
+}
+
+/* === CINEMATIC EVENTS === */
+@keyframes jail-drop-camera {
+  0% { transform: translateY(-100px) scale(1.5); opacity: 0; filter: brightness(2); }
+  50% { transform: translateY(10px) scale(1); opacity: 1; filter: brightness(1); }
+  80% { transform: translateY(-2px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes jail-bars-slam {
+  0% { transform: translateY(-100%); }
+  60% { transform: translateY(5%); }
+  80% { transform: translateY(-2%); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes jail-vignette {
+  0% { opacity: 0; }
+  100% { opacity: 0.6; }
+}
+
+@keyframes bankruptcy-shatter {
+  0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+  20% { transform: scale(1.1) rotate(2deg); filter: brightness(1.5); }
+  50% { transform: scale(0.8) rotate(-5deg); opacity: 0.7; filter: brightness(2); }
+  100% { transform: scale(0) rotate(10deg); opacity: 0; filter: brightness(0); }
+}
+
+@keyframes shard-fly-0 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-30px, -40px) scale(0.3) rotate(720deg); opacity: 0; }
+}
+@keyframes shard-fly-1 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-10px, -30px) scale(0.3) rotate(-540deg); opacity: 0; }
+}
+@keyframes shard-fly-2 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(10px, -40px) scale(0.3) rotate(720deg); opacity: 0; }
+}
+@keyframes shard-fly-3 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(30px, -30px) scale(0.3) rotate(-720deg); opacity: 0; }
+}
+@keyframes shard-fly-4 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(50px, -50px) scale(0.3) rotate(540deg); opacity: 0; }
+}
+
+@keyframes building-implode {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  30% { transform: scale(1.05); filter: brightness(1.3); }
+  60% { transform: scale(0.6); opacity: 0.6; filter: brightness(0.5); }
+  100% { transform: scale(0) translateY(10px); opacity: 0; filter: brightness(0); }
+}
+
+@keyframes dust-cloud {
+  0% { transform: scale(0); opacity: 0.8; }
+  50% { transform: scale(2); opacity: 0.4; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+@keyframes card-split {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--cx, 80px), var(--cy, -80px)) rotate(30deg); opacity: 0; }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

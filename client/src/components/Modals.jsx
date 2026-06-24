@@ -594,11 +594,13 @@ export function PlayerPropsModal({ game, playerId, onClose, onSelectProp }) {
             return (
               <Button key={pid} onPress={() => { onSelectProp?.(pid); onClose?.(); }}
                 style={{
-                  width: '100%', padding: '10px 14px', borderRadius: 12, fontSize: 13,
+                  width: '100%', padding: '10px 14px', paddingLeft: 18, borderRadius: 12, fontSize: 13,
                   background: '#1E1E1E', border: '1px solid rgba(255,255,255,0.08)',
                   marginBottom: 6, color: '#F0F0F0', textAlign: 'left',
                   display: 'flex', justifyContent: 'space-between',
+                  position: 'relative',
                 }}>
+                <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 6, borderRadius: '12px 0 0 12px', background: s?.color || 'transparent' }} />
                 <Text style={{ fontSize: 13, color: '#F0F0F0' }}>{s?.name}</Text>
                 <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                   {player.hotels?.[pid] ? '\u{1F3E8}' : '\u{1F3E0}'.repeat(player.houses?.[pid] || 0)}
@@ -678,4 +680,87 @@ export function TradeProposalModal({ proposal, game, playerId, onAccept, onDecli
       </View>
     </Overlay>
   );
+}
+
+export function CinematicOverlay({ event, onEnd }) {
+  if (!event) return null;
+
+  if (event === 'jail') {
+    return (
+      <Overlay style={{ background: 'rgba(0,0,0,0.7)', zIndex: 2000 }}>
+        <View style={{
+          animation: 'jail-drop-camera 0.8s ease-out',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 24,
+        }}>
+          <View style={{
+            width: 120, height: 120,
+            border: '6px solid rgba(150,150,150,0.8)',
+            borderRadius: 16,
+            display: 'flex', justifyContent: 'space-around', alignItems: 'stretch',
+            padding: 8,
+            animation: 'jail-bars-slam 0.5s ease-out',
+          }}>
+            {[0,1,2].map(i => (
+              <View key={i} style={{
+                width: 6, background: 'rgba(150,150,150,0.6)', borderRadius: 3,
+              }} />
+            ))}
+            <View style={{
+              position: 'absolute', top: '45%', left: '15%', right: '15%',
+              height: 4, background: 'rgba(150,150,150,0.6)', borderRadius: 2,
+            }} />
+          </View>
+          <Text style={{
+            fontSize: 24, fontWeight: 800, color: '#ef4444',
+            animation: 'fade-in-up 0.5s ease',
+            textTransform: 'uppercase', letterSpacing: 4,
+          }}>
+            Sent to Jail!
+          </Text>
+        </View>
+      </Overlay>
+    );
+  }
+
+  if (event?.type === 'bankruptcy') {
+    const player = event.player;
+    return (
+      <Overlay style={{ background: 'rgba(0,0,0,0.8)', zIndex: 2000 }}>
+        <View style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 16,
+          animation: 'fade-in-up 0.5s ease',
+        }}>
+          <View style={{
+            fontSize: 64, lineHeight: 1,
+            animation: 'bankruptcy-shatter 1.5s ease-out forwards',
+          }}>
+            {'\u{1F4A5}'}
+          </View>
+          <Text style={{
+            fontSize: 14, color: '#A0A0A0', marginTop: 8,
+            animation: 'fade-in-up 0.5s ease 0.3s both',
+          }}>
+            {player?.name}
+          </Text>
+          <Text style={{
+            fontSize: 28, fontWeight: 800, color: '#ef4444',
+            animation: 'fade-in-up 0.5s ease 0.5s both',
+            textTransform: 'uppercase', letterSpacing: 3,
+          }}>
+            Bankrupt!
+          </Text>
+          <Text style={{
+            fontSize: 13, color: '#A0A0A0', textAlign: 'center', maxWidth: 200,
+            animation: 'fade-in-up 0.5s ease 0.7s both',
+          }}>
+            All assets liquidated
+          </Text>
+        </View>
+      </Overlay>
+    );
+  }
+
+  return null;
 }

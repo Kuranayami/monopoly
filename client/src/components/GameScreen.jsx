@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, Button, Scroller, Overlay } from '../elements.jsx';
 import { useIsMobile, useIsDesktop, useWindowSize } from '../hooks.js';
 import Board from './Board.jsx';
@@ -7,7 +7,7 @@ import Dice from './Dice.jsx';
 import PlayerList from './PlayerList.jsx';
 import ChatPanel from './ChatPanel.jsx';
 import PropertyCard from './PropertyCard.jsx';
-import { CardModal, PropertyModal, AuctionModal, RentModal, BuildingsModal, TradeModal, PlayerPropsModal, TradeProposalModal } from './Modals.jsx';
+import { CardModal, PropertyModal, AuctionModal, RentModal, BuildingsModal, TradeModal, PlayerPropsModal, TradeProposalModal, CinematicOverlay } from './Modals.jsx';
 import { SPACES } from 'shared/constants.js';
 
 export default function GameScreen({ socket, game, playerId, onLeave, showNotif }) {
@@ -27,6 +27,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [landedOnCard, setLandedOnCard] = useState(false);
+  const [animState, setAnimState] = useState({});
+  const [cinematicEvent, setCinematicEvent] = useState(null);
 
   const player = game?.players?.find(p => p.id === playerId);
   const isMyTurn = game?.players?.[game?.currentTurn]?.id === playerId;
@@ -105,12 +107,84 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 
   const handleRoll = useCallback(() => {
     if (!isMyTurn || phase !== 'pre_roll') return;
+    if (player?.inJail && player?.jailTurns >= 2) {
+      setAnimState(prev => ({ ...prev, lastChanceRoll: true }));
+    }
     setRolling(true);
+    setAnimState({});
+    setCinematicEvent(null);
     setTimeout(() => setRolling(false), 500);
     socket?.emit('roll_dice', (res) => {
       if (!res?.success) showNotif(res?.error || 'Roll failed');
     });
-  }, [isMyTurn, phase, socket, showNotif]);
+  }, [isMyTurn, phase, socket, showNotif, player?.inJail, player?.jailTurns]);
+
+  // Derive animation states from game state changes
+  const prevGameRef = useRef(null);
+  useEffect(() => {
+    if (!game || !prevGameRef.current) {
+      prevGameRef.current = game;
+      return;
+    }
+    const prev = prevGameRef.current;
+    const prevDice = prev.dice;
+    const currDice = game.dice;
+
+    // Check for doubles outcome (dice landed matching)
+    if (currDice && currDice.length === 2 && currDice[0] === currDice[1] && !rolling) {
+      setAnimState(prev => ({ ...prev, isDoubles: true }));
+      setTimeout(() => setAnimState(prev => ({ ...prev, isDoubles: false })), 3000);
+    }
+
+    // Check for consecutive doubles (speeding warning)
+    const currPlayer = game.players[game.currentTurn];
+    const prevPlayer = prev.players[prev.currentTurn];
+    if (currPlayer?.consecutiveDoubles >= 3 && currPlayer?.inJail) {
+      setAnimState(prev => ({ ...prev, speedWarning: true }));
+      setTimeout(() => setAnimState(prev => ({ ...prev, speedWarning: false })), 2000);
+    }
+
+    // Check for jail event (Go To Jail space or 3rd double)
+    if (currPlayer?.inJail && !prevPlayer?.inJail) {
+      setCinematicEvent('jail');
+      setTimeout(() => setCinematicEvent(null), 1500);
+    }
+
+    // Check for building/hotel changes
+    game.players.forEach(p => {
+      const prevP = prev.players.find(pp => pp.id === p.id);
+      if (!prevP) return;
+      Object.keys(p.houses || {}).forEach(pid => {
+        const prevHouses = prevP.houses?.[pid] || 0;
+        if (p.houses[pid] > prevHouses) {
+          setAnimState(prev => ({ ...prev, buildingSpaceId: Number(pid) }));
+          setTimeout(() => setAnimState(prev => ({ ...prev, buildingSpaceId: null })), 1200);
+        }
+      });
+      Object.keys(p.hotels || {}).forEach(pid => {
+        if (p.hotels[pid] && !prevP.hotels?.[pid]) {
+          setAnimState(prev => ({ ...prev, buildingSpaceId: Number(pid) }));
+          setTimeout(() => setAnimState(prev => ({ ...prev, buildingSpaceId: null })), 1200);
+        }
+      });
+      // Detect house sell / demolition
+      Object.keys(prevP.houses || {}).forEach(pid => {
+        if ((p.houses?.[pid] || 0) < (prevP.houses[pid] || 0)) {
+          setAnimState(prev => ({ ...prev, demolishSpaceId: Number(pid) }));
+          setTimeout(() => setAnimState(prev => ({ ...prev, demolishSpaceId: null })), 1000);
+        }
+      });
+    });
+
+    // Check for bankruptcy
+    const justBankrupted = game.players.find(p => p.isBankrupt && !prev.players.find(pp => pp.id === p.id)?.isBankrupt);
+    if (justBankrupted) {
+      setCinematicEvent({ type: 'bankruptcy', player: justBankrupted });
+      setTimeout(() => setCinematicEvent(null), 2000);
+    }
+
+    prevGameRef.current = game;
+  }, [game, rolling]);
 
   const handleEndTurn = useCallback(() => {
     socket?.emit('end_turn', (res) => {
@@ -262,7 +336,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 
   const gameActions = (
     <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-      <Dice dice={game?.dice} rolling={rolling} onRoll={handleRoll} canRoll={isMyTurn && phase === 'pre_roll'} />
+      <Dice dice={game?.dice} rolling={rolling} onRoll={handleRoll} canRoll={isMyTurn && phase === 'pre_roll'} animState={animState} />
       {isMyTurn && phase === 'pre_roll' && !game?.dice?.length && player?.inJail && (
         <>
           <Button onPress={handlePayBail}
@@ -447,7 +521,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             <View style={{ height: 'calc(100dvh - 200px)', overflow: 'hidden' }}>
               <ZoomBoard>
                 <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0' }}>
-                  <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} />
+<Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} animState={animState} />
                   <View style={{ padding: '0 12px' }}>
                     <PlayerList game={game} playerId={playerId} />
                   </View>
@@ -495,6 +569,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
         {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
         {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
+        {cinematicEvent && <CinematicOverlay event={cinematicEvent} />}
         {leaveConfirm && (
           <Overlay>
             <View style={{
@@ -545,7 +620,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 
       <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden' }}>
         <ZoomBoard>
-          <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} />
+          <Board game={game} playerId={playerId} cellSize={cellSize}
+                dice={game?.dice} rolling={rolling} animState={animState} />
         </ZoomBoard>
         {gameActions}
         <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -585,6 +661,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       {tradeModal && <TradeModal game={game} playerId={playerId} socket={socket} onClose={() => setTradeModal(false)} />}
       {tradeProposal && <TradeProposalModal proposal={tradeProposal} game={game} playerId={playerId} onAccept={handleAcceptTrade} onDecline={handleDeclineTrade} />}
       {propsModal && <PlayerPropsModal game={game} playerId={propsModal} onClose={() => setPropsModal(null)} onSelectProp={(pid) => setBuildModal({ spaceId: pid })} />}
+      {cinematicEvent && <CinematicOverlay event={cinematicEvent} />}
         {leaveConfirm && (
           <Overlay>
             <View style={{
