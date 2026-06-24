@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const DEFAULT_POS = new THREE.Vector3(5, 7, 7);
+const DEFAULT_POS = new THREE.Vector3(0, 10, 9);
 const THROW_POS = new THREE.Vector3(0, 2.5, 4);
 const LAND_POS = new THREE.Vector3(0, 6, 0.01);
 const DOUBLES_POS = new THREE.Vector3(0, 3, 2);
