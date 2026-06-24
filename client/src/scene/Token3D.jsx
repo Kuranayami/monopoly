@@ -1,7 +1,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { GRID_POSITIONS, GRID_SIZE } from 'shared/constants.js';
+import { posToWorld } from './boardLayout.js';
 
 function useTokenHop(pos) {
   const prevPosRef = useRef(pos);
@@ -18,36 +18,13 @@ function useTokenHop(pos) {
   };
 }
 
-const BOARD_SIZE = 10;
-const CELL = BOARD_SIZE / GRID_SIZE;
-const HALF = (GRID_SIZE - 1) / 2;
-const W = 0.85;
-const D = 0.3;
-
-function getTileOffset(x, y) {
-  const isCorner = (x === 0 || x === 10) && (y === 0 || y === 10);
-  const edge = x === 0 ? 'left' : x === 10 ? 'right' : y === 0 ? 'top' : y === 10 ? 'bottom' : 'center';
-  let offX = 0, offZ = 0;
-  if (!isCorner) {
-    if (edge === 'bottom') offZ = CELL / 2 - D / 2;
-    else if (edge === 'top') offZ = -(CELL / 2 - D / 2);
-    else if (edge === 'right') offX = CELL / 2 - D / 2;
-    else if (edge === 'left') offX = -(CELL / 2 - D / 2);
-  }
-  return [offX, offZ];
-}
-
-function posToWorld(pos) {
-  const gp = GRID_POSITIONS.find(p => p.pos === pos);
-  if (!gp) return [0, 0, 0];
-  const [ox, oz] = getTileOffset(gp.x, gp.y);
-  return [(gp.x - HALF) * CELL + ox, 0.05, (gp.y - HALF) * CELL + oz];
-}
-
 const TOKEN_COLORS = {
-  top_hat: '#8B4513', car: '#e63946', dog: '#4a90d9',
-  battleship: '#555', iron: '#666', thimble: '#c0c0c0',
+  top_hat: '#6B6B6B', car: '#5A5A5A', dog: '#707070',
+  battleship: '#555555', iron: '#626262', thimble: '#787878',
+  shoe: '#5E5E5E', cannon: '#6A6A6A',
 };
+
+const PEWTER = { metalness: 0.4, roughness: 0.6 };
 
 // Racecar: Drift, tire smoke, rev
 function RacecarToken({ pos }) {
@@ -89,22 +66,47 @@ function RacecarToken({ pos }) {
 
   return (
     <group ref={groupRef} position={[wx, wy, wz]}>
-      {/* Body */}
+      {/* Body — low, sleek 1930s silhouette */}
       <mesh castShadow>
-        <boxGeometry args={[0.14, 0.04, 0.08]} />
-        <meshStandardMaterial color={TOKEN_COLORS.car} metalness={0.6} roughness={0.2} />
+        <boxGeometry args={[0.16, 0.03, 0.07]} />
+        <meshStandardMaterial color={TOKEN_COLORS.car} {...PEWTER} />
       </mesh>
-      {/* Cabin */}
-      <mesh position={[0, 0.03, 0]} castShadow>
-        <boxGeometry args={[0.06, 0.035, 0.06]} />
-        <meshStandardMaterial color="#222" metalness={0.3} roughness={0.5} />
+      {/* Nose cone */}
+      <mesh position={[0.085, 0.015, 0]} castShadow>
+        <sphereGeometry args={[0.025, 8, 6]} />
+        <meshStandardMaterial color={TOKEN_COLORS.car} {...PEWTER} />
       </mesh>
-      {/* Wheels */}
-      {[[-0.05, -0.02, -0.05], [0.05, -0.02, -0.05], [-0.05, -0.02, 0.05], [0.05, -0.02, 0.05]].map((p, i) => (
-        <mesh key={i} position={p} castShadow>
-          <cylinderGeometry args={[0.015, 0.015, 0.025, 6]} />
-          <meshStandardMaterial color="#111" roughness={0.8} />
-        </mesh>
+      {/* Tail fin */}
+      <mesh position={[-0.085, 0.025, 0]} castShadow>
+        <boxGeometry args={[0.02, 0.02, 0.01]} />
+        <meshStandardMaterial color={TOKEN_COLORS.car} {...PEWTER} />
+      </mesh>
+      {/* Cockpit — open, driver head */}
+      <mesh position={[0.01, 0.035, 0]} castShadow>
+        <boxGeometry args={[0.05, 0.03, 0.055]} />
+        <meshStandardMaterial color="#222" {...PEWTER} />
+      </mesh>
+      {/* Driver head */}
+      <mesh position={[0.02, 0.055, 0]} castShadow>
+        <sphereGeometry args={[0.015, 8, 8]} />
+        <meshStandardMaterial color="#333" roughness={0.8} />
+      </mesh>
+      {/* Wire-spoke wheels */}
+      {[[-0.055, -0.018, -0.045], [0.055, -0.018, -0.045],
+        [-0.055, -0.018, 0.045], [0.055, -0.018, 0.045]].map((p, i) => (
+        <group key={i} position={p}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.017, 0.017, 0.02, 8]} />
+            <meshStandardMaterial color={TOKEN_COLORS.car} {...PEWTER} />
+          </mesh>
+          {/* Spoke lines */}
+          {[0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3].map((a, j) => (
+            <mesh key={j} position={[0.008*Math.cos(a), 0.008*Math.sin(a), 0]} rotation={[0, 0, -a]}>
+              <boxGeometry args={[0.016, 0.002, 0.001]} />
+              <meshStandardMaterial color={TOKEN_COLORS.car} {...PEWTER} />
+            </mesh>
+          ))}
+        </group>
       ))}
       {/* Tire smoke particles */}
       <points ref={smokeRef} position={[0, -0.02, -0.06]}>
@@ -134,20 +136,20 @@ function TopHatToken({ pos }) {
 
   return (
     <group ref={groupRef} position={[wx, wy, wz]}>
-      {/* Hat base */}
-      <mesh castShadow>
-        <cylinderGeometry args={[0.07, 0.08, 0.02, 12]} />
-        <meshStandardMaterial color={TOKEN_COLORS.top_hat} roughness={0.3} />
+      {/* Hat brim — curved */}
+      <mesh rotation={[Math.PI/2, 0, 0]} castShadow>
+        <ringGeometry args={[0.03, 0.085, 16]} />
+        <meshStandardMaterial color={TOKEN_COLORS.top_hat} {...PEWTER} side={THREE.DoubleSide} />
       </mesh>
-      {/* Hat top */}
-      <mesh position={[0, 0.035, 0]} castShadow>
-        <cylinderGeometry args={[0.045, 0.055, 0.05, 12]} />
-        <meshStandardMaterial color={TOKEN_COLORS.top_hat} roughness={0.4} />
+      {/* Hat body — tapered cylinder */}
+      <mesh position={[0, 0.04, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.055, 0.08, 12]} />
+        <meshStandardMaterial color={TOKEN_COLORS.top_hat} {...PEWTER} />
       </mesh>
       {/* Hat band */}
       <mesh position={[0, 0.015, 0]}>
-        <cylinderGeometry args={[0.055, 0.06, 0.008, 12]} />
-        <meshStandardMaterial color="#222" roughness={0.6} />
+        <cylinderGeometry args={[0.045, 0.052, 0.008, 12]} />
+        <meshStandardMaterial color="#333" {...PEWTER} />
       </mesh>
     </group>
   );
@@ -177,34 +179,84 @@ function BattleshipToken({ pos }) {
     <group ref={groupRef} position={[wx, wy, wz]}>
       {/* Hull */}
       <mesh castShadow>
-        <boxGeometry args={[0.12, 0.03, 0.06]} />
-        <meshStandardMaterial color={TOKEN_COLORS.battleship} metalness={0.7} roughness={0.2} />
+        <boxGeometry args={[0.14, 0.03, 0.06]} />
+        <meshStandardMaterial color={TOKEN_COLORS.battleship} {...PEWTER} />
       </mesh>
       {/* Deck */}
       <mesh position={[0, 0.02, 0]} castShadow>
-        <boxGeometry args={[0.1, 0.02, 0.05]} />
-        <meshStandardMaterial color="#666" metalness={0.5} roughness={0.3} />
+        <boxGeometry args={[0.12, 0.015, 0.055]} />
+        <meshStandardMaterial color="#5A5A5A" {...PEWTER} />
       </mesh>
-      {/* Turret */}
-      <mesh position={[0.03, 0.04, 0]} castShadow>
-        <cylinderGeometry args={[0.015, 0.02, 0.025, 8]} />
-        <meshStandardMaterial color="#444" metalness={0.6} roughness={0.3} />
+      {/* Forward turret */}
+      <mesh position={[0.04, 0.04, 0]} castShadow>
+        <cylinderGeometry args={[0.015, 0.022, 0.025, 8]} />
+        <meshStandardMaterial color={TOKEN_COLORS.battleship} {...PEWTER} />
       </mesh>
-      {/* Cannon barrel */}
-      <mesh position={[0.06, 0.045, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      {/* Forward turret barrel */}
+      <mesh position={[0.07, 0.045, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.004, 0.006, 0.04, 6]} />
-        <meshStandardMaterial color="#333" metalness={0.8} roughness={0.2} />
+        <meshStandardMaterial color={TOKEN_COLORS.battleship} {...PEWTER} />
+      </mesh>
+      {/* Aft turret */}
+      <mesh position={[-0.04, 0.04, 0]} castShadow>
+        <cylinderGeometry args={[0.012, 0.018, 0.02, 8]} />
+        <meshStandardMaterial color={TOKEN_COLORS.battleship} {...PEWTER} />
+      </mesh>
+      {/* Aft turret barrel */}
+      <mesh position={[-0.065, 0.045, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.003, 0.005, 0.03, 6]} />
+        <meshStandardMaterial color={TOKEN_COLORS.battleship} {...PEWTER} />
+      </mesh>
+      {/* Bridge */}
+      <mesh position={[0.01, 0.04, 0]} castShadow>
+        <boxGeometry args={[0.025, 0.015, 0.02]} />
+        <meshStandardMaterial color={TOKEN_COLORS.battleship} {...PEWTER} />
       </mesh>
       {/* Wave glow */}
-      <mesh ref={waveRef} position={[0, -0.01, 0]}>
-        <planeGeometry args={[0.2, 0.08]} />
+      <mesh ref={waveRef} position={[0, -0.015, 0]}>
+        <planeGeometry args={[0.22, 0.08]} />
         <meshBasicMaterial color="#4488ff" transparent opacity={0.15} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
-// Generic token fallback
+// Thimble — hollow cylinder with domed top, dimpled grid texture
+function ThimbleToken({ pos }) {
+  const groupRef = useRef(null);
+  const getHop = useTokenHop(pos);
+  const [wx, wy, wz] = posToWorld(pos);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    groupRef.current.position.y = 0.05 + 0.01 * Math.sin(clock.getElapsedTime() * 2) + getHop();
+  });
+
+  return (
+    <group ref={groupRef} position={[wx, wy, wz]}>
+      <mesh castShadow>
+        <cylinderGeometry args={[0.04, 0.045, 0.055, 10]} />
+        <meshStandardMaterial color={TOKEN_COLORS.thimble} {...PEWTER} />
+      </mesh>
+      {/* Domed top */}
+      <mesh position={[0, 0.035, 0]} castShadow>
+        <sphereGeometry args={[0.04, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color={TOKEN_COLORS.thimble} {...PEWTER} />
+      </mesh>
+      {/* Grid/dimpled rings */}
+      <mesh position={[0, -0.01, 0]}>
+        <torusGeometry args={[0.042, 0.002, 4, 12]} />
+        <meshStandardMaterial color={TOKEN_COLORS.thimble} {...PEWTER} />
+      </mesh>
+      <mesh position={[0, 0.015, 0]}>
+        <torusGeometry args={[0.038, 0.002, 4, 12]} />
+        <meshStandardMaterial color={TOKEN_COLORS.thimble} {...PEWTER} />
+      </mesh>
+    </group>
+  );
+}
+
+// Generic token fallback for dog, iron, etc.
 function GenericToken({ token, color, pos }) {
   const groupRef = useRef(null);
   const getHop = useTokenHop(pos);
@@ -219,11 +271,11 @@ function GenericToken({ token, color, pos }) {
     <group ref={groupRef} position={[wx, wy, wz]}>
       <mesh castShadow>
         <cylinderGeometry args={[0.06, 0.08, 0.04, 8]} />
-        <meshStandardMaterial color={color} roughness={0.3} metalness={0.2} />
+        <meshStandardMaterial color={color} {...PEWTER} />
       </mesh>
       <mesh position={[0, 0.045, 0]} castShadow>
         <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color={color} roughness={0.2} metalness={0.3} />
+        <meshStandardMaterial color={color} {...PEWTER} />
       </mesh>
     </group>
   );
@@ -239,6 +291,8 @@ export default function Token3D({ player, pos }) {
       return <TopHatToken pos={pos} />;
     case 'battleship':
       return <BattleshipToken pos={pos} />;
+    case 'thimble':
+      return <ThimbleToken pos={pos} />;
     default:
       return <GenericToken token={player.token} color={color} pos={pos} />;
   }

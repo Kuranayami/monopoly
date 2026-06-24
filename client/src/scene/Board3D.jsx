@@ -1,105 +1,64 @@
 import { useMemo } from 'react';
 import { Text } from '@react-three/drei';
-import { SPACES, GRID_POSITIONS, GRID_SIZE } from 'shared/constants.js';
+import { SPACES } from 'shared/constants.js';
+import { getSpaceGeometry, BOARD, TRACK, CORNER, SPACE, BAND } from './boardLayout.js';
 
-const BOARD_SIZE = 10;
-const CELL = BOARD_SIZE / GRID_SIZE;
-const HALF = (GRID_SIZE - 1) / 2;
-const W = 0.85;
-const D = 0.3;
-
-function px(i) { return (i - HALF) * CELL; }
-
-const COLORS = {
-  brown: '#955436', light_blue: '#A8D8EA', pink: '#D94F93',
-  orange: '#F7923A', red: '#ED1B24', yellow: '#FEE101',
-  green: '#1FB25A', dark_blue: '#0072BB',
-  railroad: '#333', utility: '#777',
+const GRP_COLORS = {
+  brown: '#5A3825', light_blue: '#A9DDF7', pink: '#D93B88',
+  orange: '#F58220', red: '#E31B23', yellow: '#FFF200',
+  green: '#00A651', dark_blue: '#0054A6',
+  railroad: '#333', utility: '#555',
 };
 
-const CORNER_INFO = {
-  0:  { label: 'GO', color: '#60A5FA' },
-  10: { label: 'JAIL', color: '#F59E0B' },
-  20: { label: 'FREE\nPARKING', color: '#34D399' },
-  30: { label: 'GO TO\nJAIL', color: '#EF4444' },
-};
+const HEIGHT = 0.06;
 
-function SpaceTile({ space, x, y }) {
-  if (!space) return null;
-  const isCorner = space.id === 0 || space.id === 10 || space.id === 20 || space.id === 30;
-  const edge = x === 0 ? 'left' : x === 10 ? 'right' : y === 0 ? 'top' : y === 10 ? 'bottom' : 'center';
+function SpaceTile({ pos }) {
+  const space = SPACES[pos];
+  const g = getSpaceGeometry(pos);
+  if (!space || !g) return null;
+
   const isProp = space.type === 'property';
-  const color = COLORS[space?.group] || '#555';
-  const corner = CORNER_INFO[space.id];
+  const color = GRP_COLORS[space?.group] || '#555';
+  const tileColor = g.edge === 'corner' ? '#FDFBF7' : (isProp ? '#FDFBF7' : '#F0EDE4');
+  const lineW = 0.01;
 
-  let boxArgs = [W, 0.04, W * 0.5];
-  let offX = 0, offZ = 0;
-  if (isCorner) { boxArgs = [W, 0.04, W]; }
-  else if (edge === 'bottom') { boxArgs = [W, 0.04, D]; offZ = CELL / 2 - D / 2; }
-  else if (edge === 'top') { boxArgs = [W, 0.04, D]; offZ = -(CELL / 2 - D / 2); }
-  else if (edge === 'right') { boxArgs = [D, 0.04, W]; offX = CELL / 2 - D / 2; }
-  else if (edge === 'left') { boxArgs = [D, 0.04, W]; offX = -(CELL / 2 - D / 2); }
-
-  let barArgs = null, barPos = null;
-  if (isProp && !isCorner) {
-    if (edge === 'bottom') {
-      barArgs = [W * 0.8, 0.015, 0.04];
-      barPos = [0, 0.024, D / 2 - 0.04];
-    } else if (edge === 'top') {
-      barArgs = [W * 0.8, 0.015, 0.04];
-      barPos = [0, 0.024, -D / 2 + 0.04];
-    } else if (edge === 'right') {
-      barArgs = [0.04, 0.015, W * 0.8];
-      barPos = [-D / 2 + 0.04, 0.024, 0];
-    } else if (edge === 'left') {
-      barArgs = [0.04, 0.015, W * 0.8];
-      barPos = [D / 2 - 0.04, 0.024, 0];
-    }
-  }
-
-  const tSize = CELL * 0.075;
-  let namePos, nameMaxW, pricePos;
-  if (isCorner) {
-    namePos = [0, 0.026, 0];
-    nameMaxW = W * 0.6;
-  } else if (edge === 'bottom') { namePos = [0, 0.026, -0.03]; nameMaxW = D * 2; pricePos = [0, 0.026, D * 0.25]; }
-  else if (edge === 'top') { namePos = [0, 0.026, 0.03]; nameMaxW = D * 2; pricePos = [0, 0.026, -D * 0.25]; }
-  else if (edge === 'right') { namePos = [0.03, 0.026, 0]; nameMaxW = D * 2; pricePos = [-D * 0.25, 0.026, 0]; }
-  else if (edge === 'left') { namePos = [-0.03, 0.026, 0]; nameMaxW = D * 2; pricePos = [D * 0.25, 0.026, 0]; }
+  const nameSize = g.edge === 'corner' ? 0.12 : (CORNER * 0.08);
+  const priceSize = 0.06;
 
   return (
-    <group position={[px(x) + offX, 0, px(y) + offZ]}>
-      <mesh receiveShadow castShadow>
-        <boxGeometry args={boxArgs} />
-        <meshStandardMaterial color={isCorner ? '#1a1a2e' : color} roughness={0.5} />
+    <group position={[g.cx, 0, g.cz]}>
+      {/* Tile body */}
+      <mesh receiveShadow>
+        <boxGeometry args={[g.w - lineW, HEIGHT, g.d - lineW]} />
+        <meshStandardMaterial color={tileColor} roughness={0.7} />
       </mesh>
 
-      {barArgs && (
-        <mesh position={barPos}>
-          <boxGeometry args={barArgs} />
-          <meshStandardMaterial color={space.color || color} roughness={0.3} />
+      {/* Outer edge accent line */}
+      <mesh position={[0, HEIGHT / 2 + 0.001, 0]}>
+        <boxGeometry args={[g.w, 0.002, g.d]} />
+        <meshBasicMaterial color="#111" transparent opacity={0.15} />
+      </mesh>
+
+      {/* Color band at outer edge */}
+      {isProp && g.band && (
+        <mesh position={[g.band.cx - g.cx, HEIGHT / 2 + 0.002, g.band.cz - g.cz]}>
+          <boxGeometry args={[g.band.bw, 0.003, g.band.bd]} />
+          <meshStandardMaterial color={color} roughness={0.4} />
         </mesh>
       )}
 
-      {corner ? (
-        <Text position={namePos} fontSize={tSize * 1.5}
-          color={corner.color} anchorX="center" anchorY="middle"
-          maxWidth={nameMaxW} outlineWidth={0.003} outlineColor="#000" textAlign="center">
-          {corner.label}
-        </Text>
-      ) : (
-        <Text position={namePos} fontSize={tSize}
-          color="#fff" anchorX="center" anchorY="middle"
-          maxWidth={nameMaxW} outlineWidth={0.003} outlineColor="#000" textAlign="center">
-          {space.name}
-        </Text>
-      )}
+      {/* Label */}
+      <Text position={[g.labelCx - g.cx, HEIGHT / 2 + 0.005, g.labelCz - g.cz]}
+        fontSize={nameSize} color="#1a1a1a" anchorX="center" anchorY="middle"
+        maxWidth={g.w * 1.2} textAlign="center"
+        outlineWidth={0} font={undefined}>
+        {space.name}
+      </Text>
 
+      {/* Price */}
       {isProp && space.price > 0 && (
-        <Text position={pricePos || [0, 0.026, 0]}
-          fontSize={CELL * 0.05}
-          color="#FFD700" anchorX="center" anchorY="middle"
-          outlineWidth={0.002} outlineColor="#000">
+        <Text position={[g.priceCx - g.cx, HEIGHT / 2 + 0.005, g.priceCz - g.cz]}
+          fontSize={priceSize} color="#444" anchorX="center" anchorY="middle">
           ${space.price}
         </Text>
       )}
@@ -107,49 +66,56 @@ function SpaceTile({ space, x, y }) {
   );
 }
 
-function CardDeck({ position, label, icon, color }) {
+function CardDeck({ position, label, color }) {
   return (
     <group position={position}>
       <mesh>
-        <boxGeometry args={[1.3, 0.06, 0.9]} />
-        <meshStandardMaterial color={color} roughness={0.4} />
+        <boxGeometry args={[1.2, 0.05, 0.85]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
       </mesh>
-      <Text position={[0, 0.04, 0.05]} fontSize={0.13}
+      <Text position={[0, 0.03, 0.05]} fontSize={0.1}
         color="#fff" anchorX="center" anchorY="middle" textAlign="center"
         outlineWidth={0.003} outlineColor="#000">
         {label}
-      </Text>
-      <Text position={[0, 0.04, -0.12]} fontSize={0.25}
-        color="#fff" anchorX="center" anchorY="middle">
-        {icon}
       </Text>
     </group>
   );
 }
 
 export default function Board3D() {
-  const spaces = useMemo(() =>
-    GRID_POSITIONS.map(({ pos, x, y }) => ({ space: SPACES[pos], x, y })),
-  []);
+  const spaces = useMemo(() => [...Array(40).keys()], []);
+
+  const cSig = { x: CORNER / 2, z: CORNER / 2 };
+  const centerSize = BOARD - 2 * CORNER;
 
   return (
     <group>
-      <mesh position={[0, -0.025, 0]} receiveShadow>
-        <boxGeometry args={[BOARD_SIZE + 0.3, 0.03, BOARD_SIZE + 0.3]} />
-        <meshStandardMaterial color="#0a0a0a" roughness={0.9} />
+      {/* Felt base */}
+      <mesh position={[0, -HEIGHT / 2, 0]} receiveShadow>
+        <boxGeometry args={[BOARD, 0.02, BOARD]} />
+        <meshStandardMaterial color="#FDFBF7" roughness={0.85} />
       </mesh>
 
-      <mesh position={[0, -0.008, 0]}>
-        <boxGeometry args={[BOARD_SIZE - 0.05, 0.012, BOARD_SIZE - 0.05]} />
-        <meshStandardMaterial color="#1B5E20" roughness={0.9} />
+      {/* Interior center field */}
+      <mesh position={[0, -HEIGHT / 2 + 0.003, 0]}>
+        <boxGeometry args={[centerSize, 0.003, centerSize]} />
+        <meshStandardMaterial color="#FDFBF7" roughness={0.9} />
       </mesh>
 
-      {spaces.map(({ space, x, y }) => (
-        <SpaceTile key={`${x}-${y}`} space={space} x={x} y={y} />
+      {/* Spaces */}
+      {spaces.map(pos => (
+        <SpaceTile key={pos} pos={pos} />
       ))}
 
-      <CardDeck position={[-2, 0, 0]} label="Community Chest" icon={'\u{1F4B0}'} color="#1565C0" />
-      <CardDeck position={[2, 0, 0]} label="Chance" icon={'\u{2753}'} color="#E65100" />
+      {/* Chance deck — upper-left quadrant, 45° rotated */}
+      <group position={[-centerSize * 0.2, 0, -centerSize * 0.2]} rotation={[0, Math.PI / 4, 0]}>
+        <CardDeck position={[0, 0, 0]} label="Chance" color="#E65100" />
+      </group>
+
+      {/* Community Chest deck — lower-right quadrant, 45° rotated */}
+      <group position={[centerSize * 0.2, 0, centerSize * 0.2]} rotation={[0, Math.PI / 4, 0]}>
+        <CardDeck position={[0, 0, 0]} label="Community Chest" color="#1565C0" />
+      </group>
     </group>
   );
 }
