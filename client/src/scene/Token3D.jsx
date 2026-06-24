@@ -30,7 +30,7 @@ const TS = 2; // token size multiplier
 // Racecar: Drift, tire smoke, rev
 function RacecarToken({ pos }) {
   const groupRef = useRef(null);
-  const [wx, wy, wz] = posToWorld(pos, 0.08);
+  const [wx, wy, wz] = posToWorld(pos, 0.12);
   const smokeRef = useRef(null);
   const getHop = useTokenHop(pos);
   const smokeParticles = useMemo(() => {
@@ -133,7 +133,7 @@ function TopHatToken({ pos }) {
     groupRef.current.rotation.z = 0.04 * Math.sin(t * 1.5);
   });
 
-  const [wx, wy, wz] = posToWorld(pos, 0.08);
+  const [wx, wy, wz] = posToWorld(pos, 0.12);
 
   return (
     <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
@@ -174,7 +174,7 @@ function BattleshipToken({ pos }) {
     }
   });
 
-  const [wx, wy, wz] = posToWorld(pos, 0.08);
+  const [wx, wy, wz] = posToWorld(pos, 0.12);
 
   return (
     <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
@@ -226,7 +226,7 @@ function BattleshipToken({ pos }) {
 function ThimbleToken({ pos }) {
   const groupRef = useRef(null);
   const getHop = useTokenHop(pos);
-  const [wx, wy, wz] = posToWorld(pos, 0.08);
+  const [wx, wy, wz] = posToWorld(pos, 0.12);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
@@ -261,7 +261,7 @@ function ThimbleToken({ pos }) {
 function GenericToken({ token, color, pos }) {
   const groupRef = useRef(null);
   const getHop = useTokenHop(pos);
-  const [wx, wy, wz] = posToWorld(pos, 0.08);
+  const [wx, wy, wz] = posToWorld(pos, 0.12);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;

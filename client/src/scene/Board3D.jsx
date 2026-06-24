@@ -46,25 +46,25 @@ function SpaceTile({ pos }) {
       )}
 
       {/* Label — always faces camera */}
-      <Billboard>
-        <Text position={[g.labelCx - g.cx, 0.14, g.labelCz - g.cz]}
-          fontSize={nameSize} color="#1a1a1a" anchorX="center" anchorY="middle"
-          maxWidth={g.w * 1.4} textAlign="center"
-          renderOrder={1} depthWrite={false}>
-          {space.name}
-        </Text>
-      </Billboard>
-
-      {/* Price */}
-      {isProp && space.price > 0 && (
-        <Billboard>
-          <Text position={[g.priceCx - g.cx, 0.11, g.priceCz - g.cz]}
-            fontSize={priceSize} color="#555" anchorX="center" anchorY="middle"
+        <Billboard position={[g.labelCx - g.cx, 0.18, g.labelCz - g.cz]}>
+          <Text position={[0, 0, 0]}
+            fontSize={nameSize} color="#1a1a1a" anchorX="center" anchorY="middle"
+            maxWidth={g.w * 1.4} textAlign="center"
             renderOrder={1} depthWrite={false}>
-            ${space.price}
+            {space.name}
           </Text>
         </Billboard>
-      )}
+
+        {/* Price */}
+        {isProp && space.price > 0 && (
+          <Billboard position={[g.priceCx - g.cx, 0.15, g.priceCz - g.cz]}>
+            <Text position={[0, 0, 0]}
+              fontSize={priceSize} color="#555" anchorX="center" anchorY="middle"
+              renderOrder={1} depthWrite={false}>
+              ${space.price}
+            </Text>
+          </Billboard>
+        )}
     </group>
   );
 }

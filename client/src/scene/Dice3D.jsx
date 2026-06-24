@@ -123,10 +123,20 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
   const rigidRef = useRef(null);
   const launchedRef = useRef(false);
   const snappedRef = useRef(false);
+  const snapTimerRef = useRef(null);
   const glowRef = useRef(null);
 
   useEffect(() => {
-    if (!launch || launchedRef.current || !rigidRef.current) return;
+    if (!rigidRef.current) return;
+    if (!launch) {
+      // Reset when roll cycle ends so next launch works
+      launchedRef.current = false;
+      snappedRef.current = false;
+      return;
+    }
+    if (launchedRef.current) return;
+    // Cancel any pending snap from a previous roll
+    if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); snapTimerRef.current = null; }
     launchedRef.current = true;
     snappedRef.current = false;
     const body = rigidRef.current;
@@ -140,12 +150,17 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       z: -7 + (Math.random() - 0.5) * 2,
     });
     body.setAngvel({ x: spinX, y: spinY, z: spinZ });
+    body.wakeUp();
   }, [launch]);
+
+  // Reusable temp objects for quaternion conversion
+  const _euler = new THREE.Euler();
+  const _quat = new THREE.Quaternion();
 
   useEffect(() => {
     if (!targetValue || !rigidRef.current || !launchedRef.current) return;
     snappedRef.current = true;
-    setTimeout(() => {
+    snapTimerRef.current = setTimeout(() => {
       if (rigidRef.current) {
         // Find which face shows targetValue and rotate that face to +y
         const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
@@ -154,13 +169,18 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
           if (v === targetValue) { face = f; break; }
         }
         const rot = FACE_ROTATIONS[face] || [0, 0, 0];
+        // Convert Euler → Quaternion for Rapier, then freeze body
+        _euler.set(rot[0], rot[1], rot[2], 'XYZ');
+        _quat.setFromEuler(_euler);
         rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
-        rigidRef.current.setRotation({ x: rot[0], y: rot[1], z: rot[2] });
+        rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
         rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
         rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
+        rigidRef.current.sleep();
       }
-    }, 900);
-  }, [targetValue, diceLayout]);
+      }, 900);
+    return () => { if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); snapTimerRef.current = null; } };
+  }, [targetValue, diceLayout, launch]);
 
   useFrame((_, delta) => {
     if (glowRef.current) {
