@@ -20,7 +20,7 @@ export function movePlayer(player, steps) {
   return { newPos, passedGo };
 }
 
-export function calculateRent(spaceId, game) {
+export function calculateRent(spaceId, game, customDiceTotal) {
   const space = SPACES[spaceId];
   if (!space) return 0;
   const owner = game.players.find(p => p.properties.includes(spaceId) && !p.isBankrupt);
@@ -47,8 +47,9 @@ export function calculateRent(spaceId, game) {
 
   if (space.type === 'utility') {
     const owned = owner.properties.filter(p => SPACES[p]?.type === 'utility').length;
-    if (owned === 1) return 4 * (game.lastDiceTotal || 7);
-    return 10 * (game.lastDiceTotal || 7);
+    const dt = customDiceTotal ?? game.lastDiceTotal ?? 7;
+    if (owned === 1) return 4 * dt;
+    return 10 * dt;
   }
 
   return 0;

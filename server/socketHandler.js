@@ -1002,7 +1002,7 @@ function handleLanding(game, player, diceTotal, io) {
       if (mortgaged) {
         game.lastAction = `${player.name} landed on ${space.name} but it's mortgaged — no rent`;
       } else {
-        const rent = calculateRent(player.position, game);
+        const rent = space.type === 'utility' ? calculateRent(player.position, game, diceTotal) : calculateRent(player.position, game);
         game.lastAction = `${player.name} landed on ${space.name} owned by ${owner.name}. Rent: $${rent}`;
         io.to(player.socketId).emit('rent_due', { spaceId: player.position, ownerId: owner.id, rent });
       }
@@ -1048,6 +1048,10 @@ function handleCardAction(game, player, card, io) {
     if (nearest < player.position) player.cash += GO_SALARY;
     player.position = nearest;
     game.lastAction = `${player.name} advanced to ${SPACES[nearest].name}`;
+    // Fresh dice roll for utility rent per official rules
+    const freshDice = rollDice();
+    const freshTotal = freshDice[0] + freshDice[1];
+    game.lastDiceTotal = freshTotal;
     moved = true;
   } else if (card.action === 'go_back') {
     player.position = (player.position - card.value + 40) % 40;
