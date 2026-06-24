@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { SPACES, GRID_POSITIONS } from 'shared/constants.js';
-import { posToWorld } from './boardLayout.js';
+import { posToWorld, SPACE } from './boardLayout.js';
 
 function getGroupColor(group) {
   const colors = {
@@ -82,7 +82,7 @@ function GridHighlight({ pos, color, delay }) {
 
   return (
     <mesh ref={ref} position={[px, 0.01, pz]}>
-      <planeGeometry args={[gw * 0.8, gw * 0.8]} />
+      <planeGeometry args={[SPACE * 0.8, SPACE * 0.8]} />
       <meshBasicMaterial color={color} transparent opacity={0} depthWrite={false} />
     </mesh>
   );
