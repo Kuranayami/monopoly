@@ -209,7 +209,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     }
 
     // Check for jail event (Go To Jail space or 3rd double)
-    if (currPlayer?.inJail && !prevPlayer?.inJail) {
+    const prevCurrPlayer = prev.players.find(p => p.id === currPlayer?.id);
+    if (currPlayer?.inJail && !prevCurrPlayer?.inJail) {
       setCinematicEvent('jail');
       setTimeout(() => setCinematicEvent(null), 1500);
     }
