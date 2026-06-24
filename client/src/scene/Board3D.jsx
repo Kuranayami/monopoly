@@ -56,7 +56,8 @@ function NonPropIcon({ type, g }) {
       <Billboard>
         <Text position={[0, 0, 0.002]}
           fontSize={iconH * 0.45} color="#eee" anchorX="center" anchorY="middle"
-          renderOrder={2} depthWrite={false}>
+          renderOrder={2} depthWrite={false}
+          material-polygonOffset={true} material-polygonOffsetFactor={-1} material-polygonOffsetUnits={1}>
           {iconLabel}
         </Text>
       </Billboard>
@@ -105,7 +106,8 @@ function SpaceTile({ pos }) {
         <Text position={[0, 0, 0]}
           fontSize={nameSize} color="#1a1a1a" anchorX="center" anchorY="middle"
           maxWidth={g.w * 1.4} textAlign="center"
-          renderOrder={1} depthWrite={false}>
+          renderOrder={1} depthWrite={false}
+          material-polygonOffset={true} material-polygonOffsetFactor={-1} material-polygonOffsetUnits={1}>
           {space.name}
         </Text>
       </Billboard>
@@ -115,7 +117,8 @@ function SpaceTile({ pos }) {
         <Billboard position={[g.priceCx - g.cx, 0.15, g.priceCz - g.cz]}>
           <Text position={[0, 0, 0]}
             fontSize={priceSize} color="#555" anchorX="center" anchorY="middle"
-            renderOrder={1} depthWrite={false}>
+            renderOrder={1} depthWrite={false}
+            material-polygonOffset={true} material-polygonOffsetFactor={-1} material-polygonOffsetUnits={1}>
             ${space.price}
           </Text>
         </Billboard>
@@ -184,7 +187,8 @@ function CardDeck({ position, label, color, glowColor }) {
         <Text position={[0, 0.12, 0.06]} fontSize={0.09}
           color="#fff" anchorX="center" anchorY="middle" textAlign="center"
           outlineWidth={0.003} outlineColor="#000"
-          renderOrder={1} depthWrite={false}>
+          renderOrder={1} depthWrite={false}
+          material-polygonOffset={true} material-polygonOffsetFactor={-1} material-polygonOffsetUnits={1}>
           {label}
         </Text>
       </Billboard>
@@ -203,7 +207,7 @@ function CardDeck({ position, label, color, glowColor }) {
       <mesh ref={glowRef} position={[0, 0.01, 0]}>
         <planeGeometry args={[1.8, 1.4]} />
         <meshBasicMaterial color={glowColor || color} transparent opacity={0.06}
-          depthWrite={false} side={THREE.DoubleSide} />
+          depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -223,7 +227,7 @@ function CornerGlow({ pos }) {
     <mesh ref={ref} position={[g.cx, 0.008, g.cz]}>
       <planeGeometry args={[CORNER * 0.7, CORNER * 0.7]} />
       <meshBasicMaterial color="#FFD700" transparent opacity={0.05}
-        depthWrite={false} side={THREE.DoubleSide} />
+        depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
     </mesh>
   );
 }
@@ -235,7 +239,8 @@ function GOIndicator() {
       <Text position={[0, 0, 0]}
         fontSize={0.22} color="#1a1a1a" anchorX="center" anchorY="middle"
         fontWeight="bold"
-        renderOrder={1} depthWrite={false}>
+        renderOrder={1} depthWrite={false}
+        material-polygonOffset={true} material-polygonOffsetFactor={-1} material-polygonOffsetUnits={1}>
         GO
       </Text>
     </Billboard>

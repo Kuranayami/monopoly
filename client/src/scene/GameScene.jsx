@@ -166,7 +166,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           <CameraController phase={camPhase} controlsRef={controlsRef} />
           <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true}
             minDistance={4} maxDistance={18}
-            maxPolarAngle={Math.PI / 2.1}
+            maxPolarAngle={Math.PI / 3}
             target={[0, 0, 0]} />
         </Suspense>
       </Canvas>
