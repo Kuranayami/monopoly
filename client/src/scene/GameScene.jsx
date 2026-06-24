@@ -16,12 +16,14 @@ import CinematicEvents from './CinematicEvents.jsx';
 function SceneLights() {
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[8, 12, 4]} intensity={1.5}
-        castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024}
-        shadow-camera-far={20} shadow-camera-left={-6} shadow-camera-right={6}
-        shadow-camera-top={6} shadow-camera-bottom={-6} />
-      <hemisphereLight args={['#4466aa', '#1a3a1a', 0.3]} />
+      <ambientLight intensity={0.25} />
+      <directionalLight position={[8, 10, 6]} intensity={1.8}
+        castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048}
+        shadow-camera-far={25} shadow-camera-left={-8} shadow-camera-right={8}
+        shadow-camera-top={8} shadow-camera-bottom={-8} />
+      <directionalLight position={[-6, 4, -4]} intensity={0.6} color="#4488ff" />
+      <directionalLight position={[0, 2, -8]} intensity={0.4} color="#ff8844" />
+      <hemisphereLight args={['#88bbff', '#2a4a2a', 0.4]} />
     </>
   );
 }
@@ -81,7 +83,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'relative' }}>
-      <Canvas shadows camera={{ position: [6, 8, 6], fov: 45 }} dpr={[1, 2]}
+      <Canvas shadows camera={{ position: [5, 7, 7], fov: 40 }} dpr={[1, 2]}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       >
         <Suspense fallback={null}>
