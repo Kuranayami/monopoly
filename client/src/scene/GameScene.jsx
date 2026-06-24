@@ -83,22 +83,30 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
   const [landingPos, setLandingPos] = useState(null);
   const [rollKey, setRollKey] = useState(0);
   const [initialized, setInitialized] = useState(false);
+  // safeDice prevents Dice3D from reading stale game.dice values when a new roll starts.
+  // game.dice may hold a previous roll's values briefly during the rolling→rollKey race,
+  // so we explicitly clear it on rolling and only set from confirmed dice.
+  const [safeDice, setSafeDice] = useState(null);
 
   useEffect(() => { setInitialized(true); }, []);
 
   useEffect(() => {
-    if (rolling) { setCamPhase('throw'); setLaunchDice(true); setLandingPos(null); setRollKey(k => k + 1); }
+    if (rolling) { setCamPhase('throw'); setLaunchDice(true); setLandingPos(null); setRollKey(k => k + 1); setSafeDice(null); }
   }, [rolling]);
 
   useEffect(() => {
-    if (dice && dice.length === 2 && !rolling && camPhase === 'throw') {
-      const isDbl = dice[0] === dice[1];
+    if (dice && dice.length === 2) setSafeDice(dice);
+  }, [dice]);
+
+  useEffect(() => {
+    if (safeDice && safeDice.length === 2 && !rolling && camPhase === 'throw') {
+      const isDbl = safeDice[0] === safeDice[1];
       setCamPhase(isDbl ? 'doubles' : 'land');
       const p = game?.players?.[game?.currentTurn];
       if (p && !p.isBankrupt) { setLandingPos(p.position); setTimeout(() => setLandingPos(null), 2000); }
       setTimeout(() => { setCamPhase('idle'); setLaunchDice(false); }, isDbl ? 2500 : 1200);
     }
-  }, [dice, rolling, camPhase, game]);
+  }, [safeDice, rolling, camPhase, game]);
 
   useEffect(() => {
     if (animState?.speedWarning) { setCamPhase('speeding'); setTimeout(() => setCamPhase('idle'), 2000); }
@@ -110,7 +118,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
 
   const weather = getWeatherState(game);
   const players = game?.players?.filter(p => !p.isBankrupt) || [];
-  const isDoubles = dice && dice.length === 2 && dice[0] === dice[1] && !rolling;
+  const isDoubles = safeDice && safeDice.length === 2 && safeDice[0] === safeDice[1] && !rolling;
   const isSpeeding = !!animState?.speedWarning;
 
   return (
@@ -139,9 +147,9 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           <Physics gravity={[0, -15, 0]}>
             <Board3D game={game} />
             <BoardCollider />
-            <Dice3D key={`d0-${rollKey}`} diceLayout={0} targetValue={dice?.[0]}
+            <Dice3D key={`d0-${rollKey}`} diceLayout={0} targetValue={safeDice?.[0]}
               launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
-            <Dice3D key={`d1-${rollKey}`} diceLayout={1} targetValue={dice?.[1]}
+            <Dice3D key={`d1-${rollKey}`} diceLayout={1} targetValue={safeDice?.[1]}
               launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
           </Physics>
 
