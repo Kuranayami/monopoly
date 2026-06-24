@@ -164,7 +164,7 @@ export default function GameScene({ game, playerId, animState, cinematicEvent, v
           ))}
 
           <CinematicEvents cinematicEvent={cinematicEvent} />
-          <ContactShadows opacity={0.25} blur={4} far={2} resolution={1024} />
+          <ContactShadows opacity={0.25} blur={10} far={2} resolution={1024} />
           <CameraController phase={camPhase} controlsRef={controlsRef} />
           <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true}
             minDistance={4} maxDistance={18}
