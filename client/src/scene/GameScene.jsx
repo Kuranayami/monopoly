@@ -77,6 +77,7 @@ function getWeatherState(game) {
 
 export default function GameScene({ game, playerId, rolling, dice, animState, cinematicEvent, visualPositions = {} }) {
   const controlsRef = useRef(null);
+  const canvasRef = useRef(null);
   const [camPhase, setCamPhase] = useState('idle');
   const [launchDice, setLaunchDice] = useState(false);
   const [landingPos, setLandingPos] = useState(null);
@@ -114,7 +115,13 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'relative' }}>
       <Canvas shadows={{ type: THREE.PCFShadowMap }} camera={{ position: [0, 10, 9], fov: 50 }} dpr={[1, 2]}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => {
+          canvasRef.current = gl.domElement;
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+          });
+        }}
       >
         <Suspense fallback={null}>
           <SceneLights />
