@@ -1,8 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { View, Text, Button, Scroller, Overlay } from '../elements.jsx';
 import { useIsMobile, useIsDesktop, useWindowSize } from '../hooks.js';
 import Board from './Board.jsx';
 import ZoomBoard from './ZoomBoard.jsx';
+
+const GameScene = lazy(() => import('../scene/GameScene.jsx'));
 import Dice from './Dice.jsx';
 import PlayerList from './PlayerList.jsx';
 import ChatPanel from './ChatPanel.jsx';
@@ -29,6 +31,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   const [landedOnCard, setLandedOnCard] = useState(false);
   const [animState, setAnimState] = useState({});
   const [cinematicEvent, setCinematicEvent] = useState(null);
+  const [use3d, setUse3d] = useState(false);
 
   const player = game?.players?.find(p => p.id === playerId);
   const isMyTurn = game?.players?.[game?.currentTurn]?.id === playerId;
@@ -521,7 +524,13 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             <View style={{ height: 'calc(100dvh - 200px)', overflow: 'hidden' }}>
               <ZoomBoard>
                 <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0' }}>
-<Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} animState={animState} />
+{use3d ? (
+                  <Suspense fallback={<View style={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
+                    <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
+                  </Suspense>
+                ) : (
+                  <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} animState={animState} />
+                )}
                   <View style={{ padding: '0 12px' }}>
                     <PlayerList game={game} playerId={playerId} />
                   </View>
@@ -535,9 +544,9 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               padding: '8px 12px',
               paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
             }}>
-              <View style={{ maxHeight: 60, overflow: 'auto', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {(game.actionLog && game.actionLog.length > 0 ? game.actionLog : ['Game started']).slice(-20).map((entry, i) => (
-                  <Text key={i} style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 16 }}>{entry}</Text>
+              <View style={{ maxHeight: 60, overflow: 'auto', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {(game.actionLog || ['Game started']).slice(-20).filter(Boolean).map((entry, i) => (
+                  <Text key={i} style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 14 }}>{entry}</Text>
                 ))}
               </View>
               {gameActions}
@@ -591,9 +600,17 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               </View>
             </View>
           </Overlay>
-        )}
-      </View>
-    );
+      )}
+      <Button onPress={() => setUse3d(v => !v)}
+        style={{
+          padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+          background: use3d ? '#3B82F6' : '#1E1E1E',
+          color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.1)',
+        }}>
+        {use3d ? '2D' : '3D'}
+      </Button>
+    </View>
+  );
   }
 
   // Desktop 3-column
@@ -609,20 +626,26 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           <View style={{ height: 8 }} />
           <View style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <Text style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>Game Log</Text>
-            <View style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {(game.actionLog && game.actionLog.length > 0 ? game.actionLog : ['Game started']).slice(-50).map((entry, i) => (
-                <Text key={i} style={{ fontSize: 12, color: '#C0C0C0', lineHeight: 18 }}>{entry}</Text>
-              ))}
-            </View>
+              <View style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {(game.actionLog || ['Game started']).slice(-50).filter(Boolean).map((entry, i) => (
+                  <Text key={i} style={{ fontSize: 12, color: '#C0C0C0', lineHeight: 16 }}>{entry}</Text>
+                ))}
+              </View>
           </View>
         </>
       )}
 
       <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden' }}>
-        <ZoomBoard>
-          <Board game={game} playerId={playerId} cellSize={cellSize}
-                dice={game?.dice} rolling={rolling} animState={animState} />
-        </ZoomBoard>
+{use3d ? (
+          <Suspense fallback={<View style={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
+            <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
+          </Suspense>
+        ) : (
+          <ZoomBoard>
+            <Board game={game} playerId={playerId} cellSize={cellSize}
+                  dice={game?.dice} rolling={rolling} animState={animState} />
+          </ZoomBoard>
+        )}
         {gameActions}
         <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           {isMyTurn && phase === 'post_roll' && (
