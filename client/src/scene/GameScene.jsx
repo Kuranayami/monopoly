@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef, Component } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
@@ -12,6 +12,19 @@ import WeatherSystem from './WeatherSystem.jsx';
 import GridBloom from './GridBloom.jsx';
 import BuildingSystem from './Building3D.jsx';
 import CinematicEvents from './CinematicEvents.jsx';
+
+// Error boundary to suppress R3F reconciler crash (#310) during WebGL context loss
+class SceneErrorBoundary extends Component {
+  state = { hasError: false };
+  componentDidCatch(error) {
+    if (!(error?.message?.includes('310') || error?.message?.includes('Node cannot be found'))) {
+      this.setState({ hasError: true });
+    }
+  }
+  render() {
+    return this.state.hasError ? null : this.props.children;
+  }
+}
 
 // Warm ambient dust motes floating above the board
 function BoardParticles() {
@@ -123,6 +136,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'relative' }}>
+      <SceneErrorBoundary>
       <Canvas shadows={{ type: THREE.PCFShadowMap }} camera={{ position: [0, 10, 9], fov: 50 }} dpr={[1, 2]}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
@@ -170,6 +184,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
             target={[0, 0, 0]} />
         </Suspense>
       </Canvas>
+      </SceneErrorBoundary>
     </div>
   );
 }

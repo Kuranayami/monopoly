@@ -1,67 +1,34 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { RigidBody } from '@react-three/rapier';
 
-const DICE_SIZE = 0.3;
+const DICE_SIZE = 0.38;
+const PIP_RADIUS = 0.022;
+const PIP_OFFSET = DICE_SIZE * 0.2;
+const CORNER_RADIUS = 0.04;
 
-function createFaceTexture(dots) {
-  const s = 256;
-  const c = document.createElement('canvas');
-  c.width = s;
-  c.height = s;
-  const ctx = c.getContext('2d');
-  // Dice face background — off-white with rounded rect
-  ctx.fillStyle = '#FAFAFA';
-  const m = 4;
-  function rr(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  }
-  rr(m, m, s - m * 2, s - m * 2, 12);
-  ctx.fill();
-  // Border
-  ctx.strokeStyle = '#CCC';
-  ctx.lineWidth = 2;
-  rr(m, m, s - m * 2, s - m * 2, 12);
-  ctx.stroke();
-  // Dots — dark, with slight shadow
-  ctx.fillStyle = '#111';
-  ctx.shadowColor = 'rgba(0,0,0,0.3)';
-  ctx.shadowBlur = 4;
-  const r = s * 0.06;
-  const dotPositions = {
-    1: [[0, 0]], 2: [[-0.25, -0.25], [0.25, 0.25]],
-    3: [[-0.25, -0.25], [0, 0], [0.25, 0.25]],
-    4: [[-0.25, -0.25], [0.25, -0.25], [-0.25, 0.25], [0.25, 0.25]],
-    5: [[-0.25, -0.25], [0.25, -0.25], [0, 0], [-0.25, 0.25], [0.25, 0.25]],
-    6: [[-0.25, -0.25], [0.25, -0.25], [-0.25, 0], [0.25, 0], [-0.25, 0.25], [0.25, 0.25]],
-  };
-  (dotPositions[dots] || []).forEach(([dx, dy]) => {
-    ctx.beginPath();
-    ctx.arc(s / 2 + dx * s * 0.35, s / 2 + dy * s * 0.35, r, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
+// Pip positions (local 2D) for each face value
+// Coordinates range from -1 to +1, scaled by PIP_OFFSET
+const PIP_POSITIONS = {
+  1: [[0, 0]],
+  2: [[-1, -1], [1, 1]],
+  3: [[-1, -1], [0, 0], [1, 1]],
+  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+  5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+  6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
+};
 
-const faceMaterials = {};
-[1, 2, 3, 4, 5, 6].forEach(n => {
-  const tex = createFaceTexture(n);
-  tex.needsUpdate = true;
-  faceMaterials[n] = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.2, metalness: 0.1 });
-});
+// Face geometry definitions: normal direction, local-x axis, local-y axis
+const FACE_DEFS = {
+  right: { n: [ 1, 0, 0], lx: [0, 0, 1], ly: [0, 1, 0] },
+  left:  { n: [-1, 0, 0], lx: [0, 0,-1], ly: [0, 1, 0] },
+  up:    { n: [ 0, 1, 0], lx: [1, 0, 0], ly: [0, 0, 1] },
+  down:  { n: [ 0,-1, 0], lx: [1, 0, 0], ly: [0, 0,-1] },
+  front: { n: [ 0, 0, 1], lx: [1, 0, 0], ly: [0, 1, 0] },
+  back:  { n: [ 0, 0,-1], lx: [-1,0, 0], ly: [0, 1, 0] },
+};
 
 const DICE_LAYOUTS = [
   { right: 1, left: 6, up: 2, down: 5, front: 3, back: 4 },
@@ -69,7 +36,6 @@ const DICE_LAYOUTS = [
 ];
 const FACE_ORDER = ['right', 'left', 'up', 'down', 'front', 'back'];
 
-// Euler rotations to make a given face point to +y (up)
 const FACE_ROTATIONS = {
   right: [0, 0, -Math.PI / 2],
   left:  [0, 0,  Math.PI / 2],
@@ -79,9 +45,36 @@ const FACE_ROTATIONS = {
   back:  [Math.PI / 2, 0, 0],
 };
 
-function getMaterials(layoutIdx) {
-  const l = DICE_LAYOUTS[layoutIdx] || DICE_LAYOUTS[0];
-  return FACE_ORDER.map(face => faceMaterials[l[face]]);
+function DicePips({ faceIdx, diceLayout }) {
+  const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
+  const faceName = FACE_ORDER[faceIdx];
+  const faceValue = layout[faceName];
+  const def = FACE_DEFS[faceName];
+  const half = DICE_SIZE / 2;
+  const pipDepth = PIP_RADIUS * 0.3;
+
+  const pips = useMemo(() => {
+    const localPositions = PIP_POSITIONS[faceValue] || [];
+    return localPositions.map(([px, py]) => {
+      const offset = [
+        def.lx[0] * px * PIP_OFFSET + def.ly[0] * py * PIP_OFFSET,
+        def.lx[1] * px * PIP_OFFSET + def.ly[1] * py * PIP_OFFSET,
+        def.lx[2] * px * PIP_OFFSET + def.ly[2] * py * PIP_OFFSET,
+      ];
+      return [
+        def.n[0] * half + offset[0] + def.n[0] * pipDepth,
+        def.n[1] * half + offset[1] + def.n[1] * pipDepth,
+        def.n[2] * half + offset[2] + def.n[2] * pipDepth,
+      ];
+    });
+  }, [faceValue, faceName, diceLayout]);
+
+  return pips.map((pos, i) => (
+    <mesh key={i} position={pos}>
+      <sphereGeometry args={[PIP_RADIUS, 10, 10]} />
+      <meshStandardMaterial color="#CC0000" roughness={0.3} metalness={0.01} />
+    </mesh>
+  ));
 }
 
 // Light trail particles
@@ -127,18 +120,13 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
   const targetValueRef = useRef(targetValue);
   const velRef = useRef(null);
 
-  // Sync targetValue ref every render so useFrame always sees latest value
   targetValueRef.current = targetValue;
 
-  // Reusable temp objects for quaternion conversion
   const _euler = new THREE.Euler();
   const _quat = new THREE.Quaternion();
 
-  // Memoized launch position — start above the board so if RigidBody
-  // registration is deferred, the die doesn't intersect the floor collider
   const launchPos = useMemo(() => [0, 2.5, 3], []);
 
-  // Seed random velocities once per launch cycle
   if (!velRef.current) {
     velRef.current = {
       linvel: {
@@ -156,10 +144,8 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
 
   useFrame(() => {
     if (!rigidRef.current) return;
-
     const body = rigidRef.current;
 
-    // Reset when roll cycle ends
     if (!launch) {
       if (phaseRef.current !== 'idle') {
         phaseRef.current = 'idle';
@@ -170,7 +156,6 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       return;
     }
 
-    // Phase 1: apply velocities (guaranteed RigidBody registered in useFrame)
     if (phaseRef.current === 'idle') {
       phaseRef.current = 'launching';
     }
@@ -185,7 +170,6 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       return;
     }
 
-    // Phase 2: flying — wait for 900ms, then snap
     if (phaseRef.current === 'flying') {
       if (performance.now() - launchTimeRef.current < 900) return;
       const val = targetValueRef.current;
@@ -199,7 +183,7 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       _euler.set(rot[0], rot[1], rot[2], 'XYZ');
       _quat.setFromEuler(_euler);
       const snapX = diceLayout === 0 ? -0.18 : 0.18;
-      body.setTranslation({ x: snapX, y: 0.15, z: -1.5 });
+      body.setTranslation({ x: snapX, y: DICE_SIZE / 2 + 0.02, z: -1.5 });
       body.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
       body.setLinvel({ x: 0, y: 0, z: 0 });
       body.setAngvel({ x: 0, y: 0, z: 0 });
@@ -208,24 +192,21 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       return;
     }
 
-    // Phase 3: snapped — keep the glow running
     if (phaseRef.current === 'snapped' && glowRef.current) {
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.005);
       glowRef.current.material.opacity = isDoubles ? 0.3 + 0.3 * pulse : isSpeeding ? 0.4 + 0.4 * pulse : 0;
     }
   });
 
-  const materials = useMemo(() => getMaterials(diceLayout), [diceLayout]);
+  const faceIndices = useMemo(() => [0, 1, 2, 3, 4, 5], []);
 
   return (
     <group>
-      {/* Doubles / speeding glow aura */}
       <mesh ref={glowRef} position={[0, 0.15, 0]}>
         <sphereGeometry args={[0.4, 16, 16]} />
         <meshBasicMaterial
           color={isSpeeding ? '#ff0000' : '#4488ff'}
-          transparent
-          opacity={0}
+          transparent opacity={0}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -239,9 +220,12 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
         restitution={0.4}
         friction={0.4}
       >
-        <mesh castShadow material={materials}>
-          <boxGeometry args={[DICE_SIZE, DICE_SIZE, DICE_SIZE]} />
-        </mesh>
+        <RoundedBox args={[DICE_SIZE, DICE_SIZE, DICE_SIZE]} radius={CORNER_RADIUS} bevelSegments={3} smoothness={4} castShadow>
+          <meshStandardMaterial color="#F5F0E8" roughness={0.35} metalness={0.02} />
+          {faceIndices.map(idx => (
+            <DicePips key={idx} faceIdx={idx} diceLayout={diceLayout} />
+          ))}
+        </RoundedBox>
       </RigidBody>
     </group>
   );
