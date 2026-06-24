@@ -44,7 +44,7 @@ function getWeatherState(game) {
   return 'clear';
 }
 
-export default function GameScene({ game, playerId, rolling, dice, animState, cinematicEvent }) {
+export default function GameScene({ game, playerId, rolling, dice, animState, cinematicEvent, visualPositions = {} }) {
   const [camPhase, setCamPhase] = useState('idle');
   const [launchDice, setLaunchDice] = useState(false);
   const [landingPos, setLandingPos] = useState(null);
@@ -101,7 +101,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           <BuildingSystem game={game} animState={animState || {}} />
 
           {players.map(p => (
-            <Token3D key={p.id} player={p} pos={p.position} />
+            <Token3D key={p.id} player={p} pos={visualPositions[p.id] ?? p.position} />
           ))}
 
           <CinematicEvents cinematicEvent={cinematicEvent} />

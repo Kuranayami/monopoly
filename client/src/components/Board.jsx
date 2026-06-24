@@ -22,7 +22,7 @@ const INDUSTRIAL_GROUPS = ['railroad', 'utility'];
 
 const DICE_FACES = ['', '\u2680', '\u2681', '\u2682', '\u2683', '\u2684', '\u2685'];
 
-export default function Board({ game, playerId, cellSize = 72, dice, rolling, animState }) {
+export default function Board({ game, playerId, cellSize = 72, dice, rolling, animState, visualPositions = {} }) {
   const [displayDice, setDisplayDice] = useState(null);
   const [landedPos, setLandedPos] = useState(null);
   const [shakeBoard, setShakeBoard] = useState(false);
@@ -92,6 +92,7 @@ export default function Board({ game, playerId, cellSize = 72, dice, rolling, an
     const anims = {};
     game?.players?.forEach(p => {
       if (p.isBankrupt) return;
+      if (visualPositions[p.id] !== undefined) return; // visual stepping active, skip CSS
       const prevPos = prevPositionsRef.current[p.id];
       if (prevPos !== undefined && prevPos !== p.position) {
         anims[p.id] = 'token-wind-up 0.3s ease, token-dash 0.4s ease 0.3s, token-impact 0.3s ease 0.7s';
@@ -99,10 +100,10 @@ export default function Board({ game, playerId, cellSize = 72, dice, rolling, an
       prevPositionsRef.current[p.id] = p.position;
     });
     return anims;
-  }, [game?.players?.map(p => `${p.id}:${p.position}`).join(',')]);
+  }, [game?.players?.map(p => `${p.id}:${p.position}`).join(','), visualPositions]);
 
   const getTokens = (pos) =>
-    game?.players?.filter(p => !p.isBankrupt && p.position === pos) || [];
+    game?.players?.filter(p => !p.isBankrupt && (visualPositions[p.id] ?? p.position) === pos) || [];
 
   const isCorner = (gx, gy) =>
     (gx === 0 && gy === 0) || (gx === 0 && gy === 10) ||
@@ -314,7 +315,7 @@ export default function Board({ game, playerId, cellSize = 72, dice, rolling, an
                     fontSize: tokenSize + 2,
                     lineHeight: 1.2,
                     filter: p.id === playerId ? 'drop-shadow(0 0 3px rgba(59,130,246,0.8))' : 'none',
-                    animation: hasMultipleTokens ? 'token-collision 0.6s ease' : `${tokenAnims[p.id] || ''}, ${TOKEN_IDLE_ANIMS[p.token] || 'none'}`,
+                    animation: hasMultipleTokens ? 'token-collision 0.6s ease' : `${visualPositions[p.id] !== undefined ? 'token-hop 0.3s ease' : tokenAnims[p.id] || ''}, ${TOKEN_IDLE_ANIMS[p.token] || 'none'}`,
                     transition: 'transform 0.4s ease',
                   }}>
                     {TOKEN_ICONS[p.token] || '\u{1F3B1}'}

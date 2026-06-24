@@ -3,6 +3,21 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GRID_POSITIONS, GRID_SIZE } from 'shared/constants.js';
 
+function useTokenHop(pos) {
+  const prevPosRef = useRef(pos);
+  const hopStartRef = useRef(0);
+  if (pos !== prevPosRef.current) {
+    prevPosRef.current = pos;
+    hopStartRef.current = performance.now();
+  }
+  return () => {
+    if (hopStartRef.current === 0) return 0;
+    const elapsed = performance.now() - hopStartRef.current;
+    if (elapsed < 300) return 0.04 * Math.sin((elapsed / 300) * Math.PI);
+    return 0;
+  };
+}
+
 const BOARD_SIZE = 10;
 const gw = BOARD_SIZE / GRID_SIZE;
 
@@ -22,6 +37,7 @@ function RacecarToken({ pos }) {
   const groupRef = useRef(null);
   const [wx, wy, wz] = posToWorld(pos);
   const smokeRef = useRef(null);
+  const getHop = useTokenHop(pos);
   const smokeParticles = useMemo(() => {
     const pos = new Float32Array(30 * 3);
     for (let i = 0; i < 30; i++) {
@@ -35,7 +51,7 @@ function RacecarToken({ pos }) {
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const t = clock.getElapsedTime();
-    groupRef.current.position.y = wy + 0.02 * Math.sin(t * 3);
+    groupRef.current.position.y = wy + 0.02 * Math.sin(t * 3) + getHop();
     groupRef.current.rotation.z = 0.03 * Math.sin(t * 2);
     // Tire smoke
     if (smokeRef.current) {
@@ -88,11 +104,12 @@ function RacecarToken({ pos }) {
 // Top Hat: Bounces, tips on GO
 function TopHatToken({ pos }) {
   const groupRef = useRef(null);
+  const getHop = useTokenHop(pos);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const t = clock.getElapsedTime();
-    groupRef.current.position.y = 0.05 + 0.03 * Math.abs(Math.sin(t * 2));
+    groupRef.current.position.y = 0.05 + 0.03 * Math.abs(Math.sin(t * 2)) + getHop();
     groupRef.current.rotation.z = 0.04 * Math.sin(t * 1.5);
   });
 
@@ -123,11 +140,12 @@ function TopHatToken({ pos }) {
 function BattleshipToken({ pos }) {
   const groupRef = useRef(null);
   const waveRef = useRef(null);
+  const getHop = useTokenHop(pos);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     const t = clock.getElapsedTime();
-    groupRef.current.position.y = 0.05 + 0.01 * Math.sin(t * 1.5);
+    groupRef.current.position.y = 0.05 + 0.01 * Math.sin(t * 1.5) + getHop();
     groupRef.current.rotation.z = 0.02 * Math.sin(t * 1.2);
     // Wave mesh
     if (waveRef.current) {
@@ -172,11 +190,12 @@ function BattleshipToken({ pos }) {
 // Generic token fallback
 function GenericToken({ token, color, pos }) {
   const groupRef = useRef(null);
+  const getHop = useTokenHop(pos);
   const [wx, wy, wz] = posToWorld(pos);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
-    groupRef.current.position.y = 0.05 + 0.015 * Math.sin(clock.getElapsedTime() * 2);
+    groupRef.current.position.y = 0.05 + 0.015 * Math.sin(clock.getElapsedTime() * 2) + getHop();
   });
 
   return (

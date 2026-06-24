@@ -135,6 +135,12 @@ input, button, textarea {
   60% { transform: translateX(-2px) rotate(-2deg); }
 }
 
+@keyframes token-hop {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.2); }
+  100% { transform: translateY(0) scale(1); }
+}
+
 /* === WEATHER EFFECTS === */
 @keyframes rain-drop {
   0% { transform: translateY(-10px) translateX(0); opacity: 0; }

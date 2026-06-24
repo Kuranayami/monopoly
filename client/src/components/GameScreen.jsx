@@ -32,6 +32,12 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   const [animState, setAnimState] = useState({});
   const [cinematicEvent, setCinematicEvent] = useState(null);
   const [use3d, setUse3d] = useState(false);
+  const [visualPositions, setVisualPositions] = useState({});
+
+  const isAnimatingRef = useRef(false);
+  const pendingModalRef = useRef(null);
+  const prevRollingRef = useRef(null);
+  const preRollPosRef = useRef(null);
 
   const player = game?.players?.find(p => p.id === playerId);
   const isMyTurn = game?.players?.[game?.currentTurn]?.id === playerId;
@@ -42,9 +48,11 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     if (!socket) return;
 
     const onRentDue = ({ spaceId, ownerId, rent }) => {
+      if (isAnimatingRef.current) { pendingModalRef.current = { type: 'rent', spaceId, rent }; return; }
       setRentModal({ spaceId, rent });
     };
     const onPropertyAvailable = ({ spaceId, price }) => {
+      if (isAnimatingRef.current) { pendingModalRef.current = { type: 'prop', spaceId }; return; }
       setPropModal({ spaceId });
     };
     const onCardDrawn = ({ card, playerName }) => {
@@ -64,6 +72,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       setAuctionModal(null);
     };
     const onTaxDue = ({ amount }) => {
+      if (isAnimatingRef.current) { pendingModalRef.current = { type: 'tax', amount }; return; }
       setRentModal({ amount, isTax: true });
     };
 
@@ -113,6 +122,8 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     if (player?.inJail && player?.jailTurns >= 2) {
       setAnimState(prev => ({ ...prev, lastChanceRoll: true }));
     }
+    if (player) preRollPosRef.current = player.position;
+    isAnimatingRef.current = true;
     setRolling(true);
     setAnimState({});
     setCinematicEvent(null);
@@ -121,6 +132,56 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
       if (!res?.success) showNotif(res?.error || 'Roll failed');
     });
   }, [isMyTurn, phase, socket, showNotif, player?.inJail, player?.jailTurns]);
+
+  // Step-by-step token movement when dice land
+  const startTokenAnimation = useCallback((pId, fromPos, toPos) => {
+    const path = [];
+    let p = fromPos;
+    while (p !== toPos) {
+      p = (p + 1) % 40;
+      path.push(p);
+    }
+    if (path.length === 0) return;
+
+    let step = 0;
+    isAnimatingRef.current = true;
+
+    const tick = () => {
+      if (step >= path.length) {
+        isAnimatingRef.current = false;
+        setVisualPositions(prev => { const n = { ...prev }; delete n[pId]; return n; });
+        const pm = pendingModalRef.current;
+        if (pm) {
+          pendingModalRef.current = null;
+          if (pm.type === 'rent') setRentModal({ spaceId: pm.spaceId, rent: pm.rent });
+          else if (pm.type === 'prop') setPropModal({ spaceId: pm.spaceId });
+          else if (pm.type === 'tax') setRentModal({ amount: pm.amount, isTax: true });
+        }
+        return;
+      }
+      setVisualPositions(prev => ({ ...prev, [pId]: path[step] }));
+      step++;
+      tId = setTimeout(tick, 160);
+    };
+    let tId = setTimeout(tick, 160);
+  }, []);
+
+  // Detect rolling end → animate token movement
+  useEffect(() => {
+    if (!game || !isMyTurn) return;
+    const wasRolling = prevRollingRef.current;
+    prevRollingRef.current = rolling;
+    if (wasRolling && !rolling) {
+      const player = game.players[game.currentTurn];
+      if (player && !player.isBankrupt) {
+        const startPos = preRollPosRef.current;
+        if (startPos !== null && startPos !== player.position) {
+          startTokenAnimation(player.id, startPos, player.position);
+        }
+        preRollPosRef.current = null;
+      }
+    }
+  }, [game, rolling, isMyTurn, startTokenAnimation]);
 
   // Derive animation states from game state changes
   const prevGameRef = useRef(null);
@@ -192,6 +253,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
   const handleEndTurn = useCallback(() => {
     socket?.emit('end_turn', (res) => {
       if (res?.rollAgain) {
+        isAnimatingRef.current = true;
         setRolling(true);
         setTimeout(() => setRolling(false), 500);
         socket?.emit('roll_dice', (res2) => {
@@ -532,14 +594,14 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 {use3d ? (
             <View style={{ flex: 1, overflow: 'hidden' }}>
               <Suspense fallback={<View style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
-                <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
+                <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} visualPositions={visualPositions} />
               </Suspense>
             </View>
           ) : (
             <View style={{ height: 'calc(100dvh - 200px)', overflow: 'hidden' }}>
               <ZoomBoard>
                 <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0' }}>
-                  <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} animState={animState} />
+                  <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} animState={animState} visualPositions={visualPositions} />
                   <View style={{ padding: '0 12px' }}>
                     <PlayerList game={game} playerId={playerId} />
                   </View>
@@ -648,7 +710,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
 {use3d ? (
         <View style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <Suspense fallback={<View style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
-            <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
+            <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} visualPositions={visualPositions} />
           </Suspense>
           {gameActions}
         </View>
@@ -656,7 +718,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden' }}>
           <ZoomBoard>
             <Board game={game} playerId={playerId} cellSize={cellSize}
-                  dice={game?.dice} rolling={rolling} animState={animState} />
+                  dice={game?.dice} rolling={rolling} animState={animState} visualPositions={visualPositions} />
           </ZoomBoard>
           {gameActions}
         <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
