@@ -81,12 +81,13 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
   const [camPhase, setCamPhase] = useState('idle');
   const [launchDice, setLaunchDice] = useState(false);
   const [landingPos, setLandingPos] = useState(null);
+  const [rollKey, setRollKey] = useState(0);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => { setInitialized(true); }, []);
 
   useEffect(() => {
-    if (rolling) { setCamPhase('throw'); setLaunchDice(true); setLandingPos(null); }
+    if (rolling) { setCamPhase('throw'); setLaunchDice(true); setLandingPos(null); setRollKey(k => k + 1); }
   }, [rolling]);
 
   useEffect(() => {
@@ -138,9 +139,9 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           <Physics gravity={[0, -15, 0]}>
             <Board3D game={game} />
             <BoardCollider />
-            <Dice3D diceLayout={0} targetValue={dice?.[0]}
+            <Dice3D key={`d0-${rollKey}`} diceLayout={0} targetValue={dice?.[0]}
               launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
-            <Dice3D diceLayout={1} targetValue={dice?.[1]}
+            <Dice3D key={`d1-${rollKey}`} diceLayout={1} targetValue={dice?.[1]}
               launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
           </Physics>
 

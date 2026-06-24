@@ -123,18 +123,19 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
   const rigidRef = useRef(null);
   const launchTimeRef = useRef(null);
   const pendingValueRef = useRef(null);
+  const launchedRef = useRef(false);
   const glowRef = useRef(null);
 
   // Reusable temp objects for quaternion conversion
   const _euler = new THREE.Euler();
   const _quat = new THREE.Quaternion();
 
-  // On launch → start physics, record launch time + target value
+  // Launch physics when launch becomes true (once per cycle)
   useEffect(() => {
     if (!launch || !rigidRef.current) return;
-    if (launchTimeRef.current !== null) return; // already launched this cycle
+    if (launchedRef.current) return;
+    launchedRef.current = true;
     launchTimeRef.current = performance.now();
-    pendingValueRef.current = targetValue;
     const body = rigidRef.current;
     const spinX = (Math.random() - 0.5) * 12;
     const spinY = (Math.random() - 0.5) * 12;
@@ -149,17 +150,17 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
     body.wakeUp();
   }, [launch]);
 
-  // Reset when roll cycle ends
-  useEffect(() => {
-    if (launch || targetValue) return;
-    launchTimeRef.current = null;
-    pendingValueRef.current = null;
-  }, [launch, targetValue]);
-
   // Keep pending value updated if it arrives after launch
   useEffect(() => {
     if (targetValue) pendingValueRef.current = targetValue;
   }, [targetValue]);
+
+  // Reset cycle when launch goes false
+  useEffect(() => {
+    if (launch) return;
+    launchedRef.current = false;
+    pendingValueRef.current = null;
+  }, [launch]);
 
   // Each frame: snap when 900ms has passed since launch
   const snapBody = useCallback(() => {
@@ -175,7 +176,8 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
     const rot = FACE_ROTATIONS[face] || [0, 0, 0];
     _euler.set(rot[0], rot[1], rot[2], 'XYZ');
     _quat.setFromEuler(_euler);
-    rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
+    const snapX = diceLayout === 0 ? -0.18 : 0.18;
+    rigidRef.current.setTranslation({ x: snapX, y: 0.15, z: -1.5 });
     rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
     rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
     rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
