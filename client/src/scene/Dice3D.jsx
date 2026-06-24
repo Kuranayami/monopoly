@@ -6,26 +6,54 @@ import { RigidBody } from '@react-three/rapier';
 const DICE_SIZE = 0.3;
 
 function createFaceTexture(dots) {
-  const s = 64;
+  const s = 256;
   const c = document.createElement('canvas');
   c.width = s;
   c.height = s;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#f5f5f5';
-  ctx.fillRect(0, 0, s, s);
-  ctx.fillStyle = '#1a1a2e';
-  const r = s * 0.08;
+  // Dice face background — off-white with rounded rect
+  ctx.fillStyle = '#FAFAFA';
+  const m = 4;
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+  rr(m, m, s - m * 2, s - m * 2, 12);
+  ctx.fill();
+  // Border
+  ctx.strokeStyle = '#CCC';
+  ctx.lineWidth = 2;
+  rr(m, m, s - m * 2, s - m * 2, 12);
+  ctx.stroke();
+  // Dots — dark, with slight shadow
+  ctx.fillStyle = '#111';
+  ctx.shadowColor = 'rgba(0,0,0,0.3)';
+  ctx.shadowBlur = 4;
+  const r = s * 0.06;
   const dotPositions = {
-    1: [[0, 0]], 2: [[-0.3, -0.3], [0.3, 0.3]],
-    3: [[-0.3, -0.3], [0, 0], [0.3, 0.3]],
-    4: [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]],
-    5: [[-0.3, -0.3], [0.3, -0.3], [0, 0], [-0.3, 0.3], [0.3, 0.3]],
-    6: [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0], [0.3, 0], [-0.3, 0.3], [0.3, 0.3]],
+    1: [[0, 0]], 2: [[-0.25, -0.25], [0.25, 0.25]],
+    3: [[-0.25, -0.25], [0, 0], [0.25, 0.25]],
+    4: [[-0.25, -0.25], [0.25, -0.25], [-0.25, 0.25], [0.25, 0.25]],
+    5: [[-0.25, -0.25], [0.25, -0.25], [0, 0], [-0.25, 0.25], [0.25, 0.25]],
+    6: [[-0.25, -0.25], [0.25, -0.25], [-0.25, 0], [0.25, 0], [-0.25, 0.25], [0.25, 0.25]],
   };
   (dotPositions[dots] || []).forEach(([dx, dy]) => {
-    ctx.beginPath(); ctx.arc(s / 2 + dx * s * 0.3, s / 2 + dy * s * 0.3, r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(s / 2 + dx * s * 0.35, s / 2 + dy * s * 0.35, r, 0, Math.PI * 2);
+    ctx.fill();
   });
-  return new THREE.CanvasTexture(c);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 const faceMaterials = {};
@@ -148,7 +176,7 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
         restitution={0.4}
         friction={0.4}
       >
-        <mesh castShadow materials={materials}>
+        <mesh castShadow material={materials}>
           <boxGeometry args={[DICE_SIZE, DICE_SIZE, DICE_SIZE]} />
         </mesh>
       </RigidBody>
