@@ -145,13 +145,12 @@ function CardDeck({ position, label, color, glowColor }) {
 function CornerGlow({ pos }) {
   const ref = useRef(null);
   const g = getSpaceGeometry(pos);
-  if (!g || g.edge !== 'corner') return null;
-
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const pulse = 0.3 + 0.2 * Math.sin(clock.getElapsedTime() * 0.5 + pos);
     ref.current.material.opacity = pulse * 0.08;
   });
+  if (!g || g.edge !== 'corner') return null;
 
   return (
     <mesh ref={ref} position={[g.cx, 0.005, g.cz]}>

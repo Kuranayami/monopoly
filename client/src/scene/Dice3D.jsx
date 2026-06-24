@@ -69,6 +69,16 @@ const DICE_LAYOUTS = [
 ];
 const FACE_ORDER = ['right', 'left', 'up', 'down', 'front', 'back'];
 
+// Euler rotations to make a given face point to +y (up)
+const FACE_ROTATIONS = {
+  right: [0, 0, -Math.PI / 2],
+  left:  [0, 0,  Math.PI / 2],
+  up:    [0, 0, 0],
+  down:  [Math.PI, 0, 0],
+  front: [Math.PI / 2, 0, 0],
+  back:  [-Math.PI / 2, 0, 0],
+};
+
 function getMaterials(layoutIdx) {
   const l = DICE_LAYOUTS[layoutIdx] || DICE_LAYOUTS[0];
   return FACE_ORDER.map(face => faceMaterials[l[face]]);
@@ -137,13 +147,20 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
     snappedRef.current = true;
     setTimeout(() => {
       if (rigidRef.current) {
+        // Find which face shows targetValue and rotate that face to +y
+        const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
+        let face = 'up';
+        for (const [f, v] of Object.entries(layout)) {
+          if (v === targetValue) { face = f; break; }
+        }
+        const rot = FACE_ROTATIONS[face] || [0, 0, 0];
         rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
-        rigidRef.current.setRotation({ x: 0, y: 0, z: 0 });
+        rigidRef.current.setRotation({ x: rot[0], y: rot[1], z: rot[2] });
         rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
         rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
       }
     }, 900);
-  }, [targetValue]);
+  }, [targetValue, diceLayout]);
 
   useFrame((_, delta) => {
     if (glowRef.current) {

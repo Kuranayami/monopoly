@@ -113,7 +113,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 400, position: 'relative' }}>
-      <Canvas shadows camera={{ position: [0, 10, 9], fov: 50 }} dpr={[1, 2]}
+      <Canvas shadows={{ type: THREE.PCFShadowMap }} camera={{ position: [0, 10, 9], fov: 50 }} dpr={[1, 2]}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       >
         <Suspense fallback={null}>
