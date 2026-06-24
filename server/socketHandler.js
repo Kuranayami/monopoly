@@ -318,6 +318,7 @@ export default function socketHandler(io) {
         game.dice = dice;
         game.turnPhase = 'post_roll';
 
+        let jailDebtHandled = false;
         if (player.inJail) {
           if (double) {
             player.inJail = false;
@@ -330,23 +331,34 @@ export default function socketHandler(io) {
           } else {
             player.jailTurns++;
             if (player.jailTurns >= MAX_JAIL_TURNS) {
-              player.cash -= JAIL_BAIL;
+              if (player.cash < JAIL_BAIL) {
+                player.cash = 0;
+                player.owes = JAIL_BAIL;
+                player.creditorId = null;
+                game.lastAction = `${player.name} must raise $${JAIL_BAIL} for the jail fine — sell or mortgage`;
+                jailDebtHandled = await resolveDebt(game, player, io);
+              } else {
+                player.cash -= JAIL_BAIL;
+              }
               player.inJail = false;
               player.jailTurns = 0;
-              game.lastAction = `${player.name} paid $${JAIL_BAIL} after 3 turns in jail.`;
-              const { newPos, passedGo } = movePlayer(player, diceTotal);
-              if (passedGo) { player.cash += GO_SALARY; }
-              player.position = newPos;
-              handleLanding(game, player, diceTotal, io);
+              if (!jailDebtHandled) {
+                const { newPos, passedGo } = movePlayer(player, diceTotal);
+                if (passedGo) { player.cash += GO_SALARY; }
+                player.position = newPos;
+                handleLanding(game, player, diceTotal, io);
+              }
             } else {
               game.lastAction = `${player.name} is still in jail (turn ${player.jailTurns}/${MAX_JAIL_TURNS})`;
             }
           }
-          await updateGame(game.roomCode, {
-            players: game.players, dice: game.dice, turnPhase: game.turnPhase,
-            lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
-          });
-          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+          if (!jailDebtHandled) {
+            await updateGame(game.roomCode, {
+              players: game.players, dice: game.dice, turnPhase: game.turnPhase,
+              lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+            });
+            io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+          }
           return ack({ success: true, double, dice, game: await getGame(currentRoom) });
         }
 
@@ -575,8 +587,11 @@ export default function socketHandler(io) {
         } else {
           game.lastAction = `${player.name} paid $${rent} rent to ${owner.name}`;
         }
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
-        io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
+        if (!debtResolved) {
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        }
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
         typeof callback === 'function' && callback({ success: false, error: err.message });
@@ -607,8 +622,11 @@ export default function socketHandler(io) {
         } else {
           game.lastAction = `${player.name} paid $${taxAmount} tax`;
         }
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, freeParkingPool: game.freeParkingPool, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
-        io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
+        if (!debtResolved) {
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, freeParkingPool: game.freeParkingPool, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        }
         typeof callback === 'function' && callback({ success: true });
       } catch (err) {
         typeof callback === 'function' && callback({ success: false, error: err.message });
