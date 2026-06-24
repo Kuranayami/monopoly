@@ -16,9 +16,13 @@ import CinematicEvents from './CinematicEvents.jsx';
 // Error boundary to suppress R3F reconciler crash (#310) during WebGL context loss
 class SceneErrorBoundary extends Component {
   state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
   componentDidCatch(error) {
-    if (!(error?.message?.includes('310') || error?.message?.includes('Node cannot be found'))) {
-      this.setState({ hasError: true });
+    const known = error?.message?.includes('310') || error?.message?.includes('Node cannot be found');
+    if (known) {
+      this.setState({ hasError: false });
     }
   }
   render() {

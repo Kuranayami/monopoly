@@ -125,19 +125,20 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
   const _euler = new THREE.Euler();
   const _quat = new THREE.Quaternion();
 
-  const launchPos = useMemo(() => [0, 2.5, 3], []);
+  const launchPos = useMemo(() => [diceLayout === 0 ? -0.35 : 0.35, 2.8, diceLayout === 0 ? 3.2 : 2.8], [diceLayout]);
 
   if (!velRef.current) {
+    const dir = diceLayout === 0 ? -1 : 1;
     velRef.current = {
       linvel: {
-        x: (Math.random() - 0.5) * 4,
+        x: dir * (1 + Math.random() * 2),
         y: -5 + (Math.random() - 0.5) * 2,
         z: -7 + (Math.random() - 0.5) * 2,
       },
       angvel: {
         x: (Math.random() - 0.5) * 12,
         y: (Math.random() - 0.5) * 12,
-        z: (Math.random() - 0.5) * 12,
+        z: dir * (2 + Math.random() * 4),
       },
     };
   }
@@ -182,7 +183,7 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       const rot = FACE_ROTATIONS[face] || [0, 0, 0];
       _euler.set(rot[0], rot[1], rot[2], 'XYZ');
       _quat.setFromEuler(_euler);
-      const snapX = diceLayout === 0 ? -0.18 : 0.18;
+      const snapX = diceLayout === 0 ? -0.28 : 0.28;
       body.setTranslation({ x: snapX, y: DICE_SIZE / 2 + 0.02, z: -1.5 });
       body.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
       body.setLinvel({ x: 0, y: 0, z: 0 });

@@ -17,3 +17,11 @@ console.log = (...args) => {
   if (msg.includes('THREE.WebGLRenderer') && (msg.includes('Context Lost') || msg.includes('Context Restored'))) return;
   origLog.apply(console, args);
 };
+
+// Global error handler — prevents React #310 from crashing the app
+window.addEventListener('error', (e) => {
+  if (e?.message?.includes('Minified React error #310') || e?.message?.includes('"Rendered more hooks than during the previous render."')) {
+    e.preventDefault();
+    return false;
+  }
+});
