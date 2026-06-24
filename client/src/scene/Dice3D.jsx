@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RigidBody } from '@react-three/rapier';
@@ -121,76 +121,95 @@ function DiceLightTrail({ position, active }) {
 
 export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles, isSpeeding }) {
   const rigidRef = useRef(null);
-  const launchTimeRef = useRef(null);
-  const pendingValueRef = useRef(null);
-  const launchedRef = useRef(false);
   const glowRef = useRef(null);
+  const phaseRef = useRef('idle');
+  const launchTimeRef = useRef(null);
+  const targetValueRef = useRef(targetValue);
+  const velRef = useRef(null);
+
+  // Sync targetValue ref every render so useFrame always sees latest value
+  targetValueRef.current = targetValue;
 
   // Reusable temp objects for quaternion conversion
   const _euler = new THREE.Euler();
   const _quat = new THREE.Quaternion();
 
-  // Launch physics when launch becomes true (once per cycle)
-  useEffect(() => {
-    if (!launch || !rigidRef.current) return;
-    if (launchedRef.current) return;
-    launchedRef.current = true;
-    launchTimeRef.current = performance.now();
+  // Memoized launch position — start above the board so if RigidBody
+  // registration is deferred, the die doesn't intersect the floor collider
+  const launchPos = useMemo(() => [0, 2.5, 3], []);
+
+  // Seed random velocities once per launch cycle
+  if (!velRef.current) {
+    velRef.current = {
+      linvel: {
+        x: (Math.random() - 0.5) * 4,
+        y: -5 + (Math.random() - 0.5) * 2,
+        z: -7 + (Math.random() - 0.5) * 2,
+      },
+      angvel: {
+        x: (Math.random() - 0.5) * 12,
+        y: (Math.random() - 0.5) * 12,
+        z: (Math.random() - 0.5) * 12,
+      },
+    };
+  }
+
+  useFrame(() => {
+    if (!rigidRef.current) return;
+
     const body = rigidRef.current;
-    const spinX = (Math.random() - 0.5) * 12;
-    const spinY = (Math.random() - 0.5) * 12;
-    const spinZ = (Math.random() - 0.5) * 12;
-    body.setTranslation({ x: 0, y: 2.5, z: 3 });
-    body.setLinvel({
-      x: (Math.random() - 0.5) * 4,
-      y: -5 + (Math.random() - 0.5) * 2,
-      z: -7 + (Math.random() - 0.5) * 2,
-    });
-    body.setAngvel({ x: spinX, y: spinY, z: spinZ });
-    body.wakeUp();
-  }, [launch]);
 
-  // Keep pending value updated if it arrives after launch
-  useEffect(() => {
-    if (targetValue) pendingValueRef.current = targetValue;
-  }, [targetValue]);
-
-  // Reset cycle when launch goes false
-  useEffect(() => {
-    if (launch) return;
-    launchedRef.current = false;
-    pendingValueRef.current = null;
-  }, [launch]);
-
-  // Each frame: snap when 900ms has passed since launch
-  const snapBody = useCallback(() => {
-    if (!launchTimeRef.current || !rigidRef.current) return;
-    if (performance.now() - launchTimeRef.current < 900) return;
-    const val = pendingValueRef.current;
-    if (!val) return;
-    const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
-    let face = 'up';
-    for (const [f, v] of Object.entries(layout)) {
-      if (v === val) { face = f; break; }
+    // Reset when roll cycle ends
+    if (!launch) {
+      if (phaseRef.current !== 'idle') {
+        phaseRef.current = 'idle';
+        launchTimeRef.current = null;
+        velRef.current = null;
+      }
+      glowRef.current && (glowRef.current.material.opacity = 0);
+      return;
     }
-    const rot = FACE_ROTATIONS[face] || [0, 0, 0];
-    _euler.set(rot[0], rot[1], rot[2], 'XYZ');
-    _quat.setFromEuler(_euler);
-    const snapX = diceLayout === 0 ? -0.18 : 0.18;
-    rigidRef.current.setTranslation({ x: snapX, y: 0.15, z: -1.5 });
-    rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
-    rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
-    rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
-    rigidRef.current.sleep();
-    launchTimeRef.current = null;
-  }, [diceLayout]);
 
-  useFrame(() => {
-    snapBody();
-  });
+    // Phase 1: apply velocities (guaranteed RigidBody registered in useFrame)
+    if (phaseRef.current === 'idle') {
+      phaseRef.current = 'launching';
+    }
 
-  useFrame(() => {
-    if (glowRef.current) {
+    if (phaseRef.current === 'launching') {
+      if (!velRef.current) return;
+      body.setLinvel(velRef.current.linvel);
+      body.setAngvel(velRef.current.angvel);
+      body.wakeUp();
+      launchTimeRef.current = performance.now();
+      phaseRef.current = 'flying';
+      return;
+    }
+
+    // Phase 2: flying — wait for 900ms, then snap
+    if (phaseRef.current === 'flying') {
+      if (performance.now() - launchTimeRef.current < 900) return;
+      const val = targetValueRef.current;
+      if (!val) return;
+      const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
+      let face = 'up';
+      for (const [f, v] of Object.entries(layout)) {
+        if (v === val) { face = f; break; }
+      }
+      const rot = FACE_ROTATIONS[face] || [0, 0, 0];
+      _euler.set(rot[0], rot[1], rot[2], 'XYZ');
+      _quat.setFromEuler(_euler);
+      const snapX = diceLayout === 0 ? -0.18 : 0.18;
+      body.setTranslation({ x: snapX, y: 0.15, z: -1.5 });
+      body.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
+      body.setLinvel({ x: 0, y: 0, z: 0 });
+      body.setAngvel({ x: 0, y: 0, z: 0 });
+      body.sleep();
+      phaseRef.current = 'snapped';
+      return;
+    }
+
+    // Phase 3: snapped — keep the glow running
+    if (phaseRef.current === 'snapped' && glowRef.current) {
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.005);
       glowRef.current.material.opacity = isDoubles ? 0.3 + 0.3 * pulse : isSpeeding ? 0.4 + 0.4 * pulse : 0;
     }
@@ -215,7 +234,7 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
       <RigidBody
         ref={rigidRef}
         colliders="cuboid"
-        position={[0, 0, 0]}
+        position={launchPos}
         enabledRotations={[true, true, true]}
         restitution={0.4}
         friction={0.4}
