@@ -2,6 +2,19 @@ import { SPACES, TOKENS, COMMUNITY_CHEST, CHANCE, STARTING_CASH, GO_SALARY, JAIL
 import { rollDice, isDoubles, movePlayer, calculateRent, canBuildHouse, canBuildHotel, canSellHouse, calculateStreetRepair, calculateAssets, findNextActivePlayer, checkGameOver, playerOwnsFullGroup } from './gameLogic.js';
 import { createGame, getGame, updateGame, listGames } from './store.js';
 
+function logAction(game, msg) {
+  game.lastAction = msg;
+  game.actionLog = game.actionLog || [];
+  game.actionLog.push(msg);
+}
+
+function appendAction(game, msg) {
+  game.lastAction += msg;
+  if (game.actionLog && game.actionLog.length > 0) {
+    game.actionLog[game.actionLog.length - 1] = game.lastAction;
+  }
+}
+
 function hasSellableAssets(player) {
   if (!player) return false;
   const mortgaged = player.mortgaged || [];
@@ -35,7 +48,7 @@ async function resolveDebt(game, player, io) {
       player.hotels = {};
       player.owes = 0;
       player.creditorId = null;
-      game.lastAction = `${player.name} couldn't raise enough funds and is bankrupt!`;
+      logAction(game, `${player.name} couldn't raise enough funds and is bankrupt!`);
       if (checkGameOver(game)) {
         await updateGame(game.roomCode, game);
         io.to(game.roomCode).emit('game_over', { winner: game.winner });
@@ -47,7 +60,7 @@ async function resolveDebt(game, player, io) {
         game.dice = [];
         game.lastDiceTotal = null;
         game.players.forEach(p => { p.paidRentThisTurn = false; });
-        game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+        appendAction(game, ` ${game.players[nextIdx].name}'s turn`);
         await updateGame(game.roomCode, game);
         io.to(game.roomCode).emit('game_updated', await getGame(game.roomCode));
       }
@@ -63,7 +76,7 @@ async function resolveDebt(game, player, io) {
   } else {
     game.freeParkingPool = (game.freeParkingPool || 0) + player.owes;
   }
-  game.lastAction += ` and resolved their debt`;
+  appendAction(game, ` and resolved their debt`);
   player.owes = 0;
   player.creditorId = null;
   const nextIdx = findNextActivePlayer(game, game.currentTurn);
@@ -73,7 +86,7 @@ async function resolveDebt(game, player, io) {
   game.dice = [];
   game.lastDiceTotal = null;
   game.players.forEach(p => { p.paidRentThisTurn = false; });
-  game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+  appendAction(game, ` ${game.players[nextIdx].name}'s turn`);
   await updateGame(game.roomCode, game);
   io.to(game.roomCode).emit('game_updated', await getGame(game.roomCode));
   return true;
@@ -107,13 +120,13 @@ async function finishAuction(io, game) {
     if (winner) {
       winner.cash -= game.auction.currentBid;
       winner.properties.push(game.auction.spaceId);
-      game.lastAction = `${winner.name} won ${space.name} at auction for $${game.auction.currentBid}`;
+      logAction(game, `${winner.name} won ${space.name} at auction for $${game.auction.currentBid}`);
     }
   } else {
-    game.lastAction = `${space.name} was auctioned but no one bid`;
+    logAction(game, `${space.name} was auctioned but no one bid`);
   }
   delete game.auction;
-  await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, auction: undefined });
+  await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog, auction: undefined });
   io.to(game.roomCode).emit('auction_ended');
   io.to(game.roomCode).emit('game_updated', await getGame(game.roomCode));
 }
@@ -214,8 +227,8 @@ export default function socketHandler(io) {
         };
 
         game.players.push(newPlayer);
-        game.lastAction = `${playerName} joined the room`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${playerName} joined the room`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
 
         currentPlayerId = socket.id;
         currentRoom = game.roomCode;
@@ -260,9 +273,9 @@ export default function socketHandler(io) {
         }
         if (game.hostName === leavingName) {
           game.hostName = game.players[0].name;
-          game.lastAction = `${game.hostName} is now host`;
+          logAction(game, `${game.hostName} is now host`);
         }
-        await updateGame(game.roomCode, { players: game.players, hostName: game.hostName, lastAction: game.lastAction });
+        await updateGame(game.roomCode, { players: game.players, hostName: game.hostName, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         typeof callback === 'function' && callback({ success: true });
       } catch (err) {
@@ -280,14 +293,14 @@ export default function socketHandler(io) {
         game.startedAt = new Date();
         game.turnPhase = 'pre_roll';
         game.canRollAgain = false;
-        game.lastAction = `Game started! ${game.players[0].name}'s turn`;
+        logAction(game, `Game started! ${game.players[0].name}'s turn`);
         await updateGame(game.roomCode, {
           players: game.players,
           status: game.status,
           startedAt: game.startedAt,
           turnPhase: game.turnPhase,
           canRollAgain: false,
-          lastAction: game.lastAction,
+          lastAction: game.lastAction, actionLog: game.actionLog,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         typeof callback === 'function' && callback({ success: true, game: await getGame(currentRoom) });
@@ -323,9 +336,9 @@ export default function socketHandler(io) {
           if (double) {
             player.inJail = false;
             player.jailTurns = 0;
-            game.lastAction = `${player.name} rolled doubles to get out of jail!`;
+            logAction(game, `${player.name} rolled doubles to get out of jail!`);
             const { newPos, passedGo } = movePlayer(player, diceTotal);
-            if (passedGo) { player.cash += GO_SALARY; game.lastAction += ` Passed GO, collected $${GO_SALARY}.`; }
+            if (passedGo) { player.cash += GO_SALARY; appendAction(game, ` Passed GO, collected $${GO_SALARY}.`); }
             player.position = newPos;
             handleLanding(game, player, diceTotal, io);
           } else {
@@ -335,7 +348,7 @@ export default function socketHandler(io) {
                 player.cash = 0;
                 player.owes = JAIL_BAIL;
                 player.creditorId = null;
-                game.lastAction = `${player.name} must raise $${JAIL_BAIL} for the jail fine — sell or mortgage`;
+                logAction(game, `${player.name} must raise $${JAIL_BAIL} for the jail fine — sell or mortgage`);
                 jailDebtHandled = await resolveDebt(game, player, io);
               } else {
                 player.cash -= JAIL_BAIL;
@@ -349,13 +362,13 @@ export default function socketHandler(io) {
                 handleLanding(game, player, diceTotal, io);
               }
             } else {
-              game.lastAction = `${player.name} is still in jail (turn ${player.jailTurns}/${MAX_JAIL_TURNS})`;
+              logAction(game, `${player.name} is still in jail (turn ${player.jailTurns}/${MAX_JAIL_TURNS})`);
             }
           }
           if (!jailDebtHandled) {
             await updateGame(game.roomCode, {
               players: game.players, dice: game.dice, turnPhase: game.turnPhase,
-              lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+              lastAction: game.lastAction, actionLog: game.actionLog, lastDiceTotal: game.lastDiceTotal,
             });
             io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
           }
@@ -367,7 +380,7 @@ export default function socketHandler(io) {
           if (player.consecutiveDoubles >= MAX_CONSECUTIVE_DOUBLES) {
             player.consecutiveDoubles = 0;
             sendToJail(game, player);
-            game.lastAction = `${player.name} rolled 3 consecutive doubles and is sent to jail!`;
+            logAction(game, `${player.name} rolled 3 consecutive doubles and is sent to jail!`);
             game.canRollAgain = false;
             const nextIdx = findNextActivePlayer(game, game.currentTurn);
             game.currentTurn = nextIdx;
@@ -376,7 +389,7 @@ export default function socketHandler(io) {
             game.lastDiceTotal = null;
             await updateGame(game.roomCode, {
               players: game.players, dice: game.dice, turnPhase: game.turnPhase,
-              lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+              lastAction: game.lastAction, actionLog: game.actionLog, lastDiceTotal: game.lastDiceTotal,
               currentTurn: game.currentTurn, canRollAgain: false,
             });
             io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -386,23 +399,23 @@ export default function socketHandler(io) {
           player.consecutiveDoubles = 0;
         }
 
-        game.lastAction = `${player.name} rolled ${dice[0]} + ${dice[1]} = ${diceTotal}`;
+        logAction(game, `${player.name} rolled ${dice[0]} + ${dice[1]} = ${diceTotal}`);
         const { newPos, passedGo } = movePlayer(player, diceTotal);
         if (passedGo) {
           player.cash += GO_SALARY;
-          game.lastAction += `. Passed GO, collected $${GO_SALARY}`;
+          appendAction(game, `. Passed GO, collected $${GO_SALARY}`);
         }
         player.position = newPos;
         handleLanding(game, player, diceTotal, io);
 
         if (double && !player.inJail) {
           game.canRollAgain = true;
-          game.lastAction += ` Doubles! Roll again.`;
+          appendAction(game, ` Doubles! Roll again.`);
         }
 
         await updateGame(game.roomCode, {
           players: game.players, dice: game.dice, turnPhase: game.turnPhase,
-          lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+          lastAction: game.lastAction, actionLog: game.actionLog, lastDiceTotal: game.lastDiceTotal,
           canRollAgain: game.canRollAgain,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -425,8 +438,8 @@ export default function socketHandler(io) {
           return ack({ success: false, error: 'Must roll dice, pay bail, or use jail card' });
         }
         if (game.turnPhase !== 'post_roll') {
-          game.lastAction = `${player.name} must roll first`;
-          await updateGame(game.roomCode, { lastAction: game.lastAction });
+          logAction(game, `${player.name} must roll first`);
+          await updateGame(game.roomCode, { lastAction: game.lastAction, actionLog: game.actionLog });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
           return ack({ success: false, error: 'Must roll dice first' });
         }
@@ -436,10 +449,10 @@ export default function socketHandler(io) {
           game.canRollAgain = false;
           game.turnPhase = 'pre_roll';
           game.dice = [];
-          game.lastAction = `${player.name} gets another roll!`;
+          logAction(game, `${player.name} gets another roll!`);
           game.lastDiceTotal = null;
           await updateGame(game.roomCode, {
-            turnPhase: game.turnPhase, dice: game.dice, lastAction: game.lastAction,
+            turnPhase: game.turnPhase, dice: game.dice, lastAction: game.lastAction, actionLog: game.actionLog,
             lastDiceTotal: game.lastDiceTotal, canRollAgain: false,
           });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -454,11 +467,11 @@ export default function socketHandler(io) {
         game.dice = [];
         const nextIdx = findNextActivePlayer(game, game.currentTurn);
         game.currentTurn = nextIdx;
-        game.lastAction = `${game.players[nextIdx].name}'s turn`;
+        logAction(game, `${game.players[nextIdx].name}'s turn`);
         game.lastDiceTotal = null;
         await updateGame(game.roomCode, {
           currentTurn: game.currentTurn, turnPhase: game.turnPhase, dice: game.dice,
-          lastAction: game.lastAction, lastDiceTotal: game.lastDiceTotal,
+          lastAction: game.lastAction, actionLog: game.actionLog, lastDiceTotal: game.lastDiceTotal,
           canRollAgain: false,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -485,8 +498,8 @@ export default function socketHandler(io) {
 
         player.cash -= space.price;
         player.properties.push(player.position);
-        game.lastAction = `${player.name} bought ${space.name} for $${space.price}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${player.name} bought ${space.name} for $${space.price}`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -510,8 +523,8 @@ export default function socketHandler(io) {
         const existingTimer = auctionTimers.get(currentRoom);
         if (existingTimer) clearTimeout(existingTimer);
         game.auction = { spaceId, currentBid: 0, currentBidder: null, bidders: {}, timerEnd: Date.now() + 8000 };
-        game.lastAction = `Auction started for ${space.name}!`;
-        await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
+        logAction(game, `Auction started for ${space.name}!`);
+        await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('auction_started', { ...game.auction });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         typeof callback === 'function' && callback({ success: true });
@@ -544,8 +557,8 @@ export default function socketHandler(io) {
         game.auction.currentBidder = player.id;
         game.auction.bidders[player.id] = amount;
         game.auction.timerEnd = Date.now() + 8000;
-        game.lastAction = `${player.name} bids $${amount} on ${space.name}`;
-        await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction });
+        logAction(game, `${player.name} bids $${amount} on ${space.name}`);
+        await updateGame(game.roomCode, { auction: game.auction, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('auction_update', { ...game.auction });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         typeof callback === 'function' && callback({ success: true });
@@ -583,13 +596,13 @@ export default function socketHandler(io) {
         if (owes > 0) {
           player.owes = owes;
           player.creditorId = owner.id;
-          game.lastAction = `${player.name} paid $${canPayNow} rent but still owes $${owes} — must sell or mortgage`;
+          logAction(game, `${player.name} paid $${canPayNow} rent but still owes $${owes} — must sell or mortgage`);
         } else {
-          game.lastAction = `${player.name} paid $${rent} rent to ${owner.name}`;
+          logAction(game, `${player.name} paid $${rent} rent to ${owner.name}`);
         }
         const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
         if (!debtResolved) {
-          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         }
         callback({ success: true, game: await getGame(currentRoom) });
@@ -618,13 +631,13 @@ export default function socketHandler(io) {
         if (owes > 0) {
           player.owes = owes;
           player.creditorId = null;
-          game.lastAction = `${player.name} paid $${canPayNow} tax but still owes $${owes} — must sell or mortgage`;
+          logAction(game, `${player.name} paid $${canPayNow} tax but still owes $${owes} — must sell or mortgage`);
         } else {
-          game.lastAction = `${player.name} paid $${taxAmount} tax`;
+          logAction(game, `${player.name} paid $${taxAmount} tax`);
         }
         const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
         if (!debtResolved) {
-          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, freeParkingPool: game.freeParkingPool, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog, freeParkingPool: game.freeParkingPool, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         }
         typeof callback === 'function' && callback({ success: true });
@@ -644,8 +657,8 @@ export default function socketHandler(io) {
         player.cash -= space.buildCost;
         const current = player.houses?.[spaceId] || 0;
         player.houses = { ...player.houses, [spaceId]: current + 1 };
-        game.lastAction = `${player.name} built a house on ${space.name}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${player.name} built a house on ${space.name}`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -664,8 +677,8 @@ export default function socketHandler(io) {
         player.cash -= space.buildCost;
         player.houses = { ...player.houses, [spaceId]: 0 };
         player.hotels = { ...player.hotels, [spaceId]: true };
-        game.lastAction = `${player.name} built a hotel on ${space.name}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${player.name} built a hotel on ${space.name}`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -685,10 +698,10 @@ export default function socketHandler(io) {
         player.cash += refund;
         const current = player.houses?.[spaceId] || 0;
         player.houses = { ...player.houses, [spaceId]: current - 1 };
-        game.lastAction = `${player.name} sold a house on ${space.name} for $${refund}`;
+        logAction(game, `${player.name} sold a house on ${space.name} for $${refund}`);
         const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
         if (!debtResolved) {
-          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: game.canRollAgain, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: game.canRollAgain, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         }
         callback({ success: true, game: await getGame(currentRoom) });
@@ -714,10 +727,10 @@ export default function socketHandler(io) {
         const mortgageValue = Math.floor(space.price / 2);
         player.cash += mortgageValue;
         player.mortgaged.push(spaceId);
-        game.lastAction = `${player.name} mortgaged ${space.name} for $${mortgageValue}`;
+        logAction(game, `${player.name} mortgaged ${space.name} for $${mortgageValue}`);
         const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
         if (!debtResolved) {
-          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: game.canRollAgain, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: game.canRollAgain, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
           io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         }
         callback({ success: true, game: await getGame(currentRoom) });
@@ -741,8 +754,8 @@ export default function socketHandler(io) {
         if (player.cash < unmortgageCost) return callback({ success: false, error: 'Not enough cash' });
         player.cash -= unmortgageCost;
         player.mortgaged = player.mortgaged.filter(p => p !== spaceId);
-        game.lastAction = `${player.name} unmortgaged ${space.name} for $${unmortgageCost}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${player.name} unmortgaged ${space.name} for $${unmortgageCost}`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -760,8 +773,8 @@ export default function socketHandler(io) {
         player.cash -= JAIL_BAIL;
         player.inJail = false;
         player.jailTurns = 0;
-        game.lastAction = `${player.name} paid $${JAIL_BAIL} to get out of jail`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${player.name} paid $${JAIL_BAIL} to get out of jail`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -779,8 +792,8 @@ export default function socketHandler(io) {
         player.getOutOfJailCards--;
         player.inJail = false;
         player.jailTurns = 0;
-        game.lastAction = `${player.name} used a Get Out of Jail Free card`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${player.name} used a Get Out of Jail Free card`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -826,8 +839,8 @@ export default function socketHandler(io) {
         if (fromPlayer.cash < requestMortgageFee) return callback({ success: false, error: `Need $${requestMortgageFee} for 10% mortgage transfer fee` });
 
         execTrade(game, fromPlayer, player, offer, request);
-        game.lastAction = `${fromPlayer.name} and ${player.name} completed a trade`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
+        logAction(game, `${fromPlayer.name} and ${player.name} completed a trade`);
+        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
@@ -842,8 +855,8 @@ export default function socketHandler(io) {
         const player = game.players.find(p => p.id === currentPlayerId);
         const fromPlayer = game.players.find(p => p.id === fromId);
         if (!player || !fromPlayer) return callback({ success: false, error: 'Player not found' });
-        game.lastAction = `${player.name} declined a trade from ${fromPlayer.name}`;
-        await updateGame(game.roomCode, { lastAction: game.lastAction });
+        logAction(game, `${player.name} declined a trade from ${fromPlayer.name}`);
+        await updateGame(game.roomCode, { lastAction: game.lastAction, actionLog: game.actionLog });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
         callback({ success: true });
       } catch (err) {
@@ -890,7 +903,7 @@ export default function socketHandler(io) {
         handleCardAction(game, player, card, io);
         await updateGame(game.roomCode, {
           players: game.players,
-          lastAction: game.lastAction,
+          lastAction: game.lastAction, actionLog: game.actionLog,
           freeParkingPool: game.freeParkingPool,
         });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -926,7 +939,7 @@ export default function socketHandler(io) {
         player.owes = 0;
         player.creditorId = null;
 
-        game.lastAction = `${player.name} declared bankruptcy!`;
+        logAction(game, `${player.name} declared bankruptcy!`);
         if (checkGameOver(game)) {
           io.to(currentRoom).emit('game_over', { winner: game.winner });
         } else {
@@ -937,10 +950,10 @@ export default function socketHandler(io) {
           game.dice = [];
           game.lastDiceTotal = null;
           game.players.forEach(p => { p.paidRentThisTurn = false; });
-          game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+          appendAction(game, ` ${game.players[nextIdx].name}'s turn`);
         }
         await updateGame(game.roomCode, {
-          players: game.players, lastAction: game.lastAction, status: game.status,
+          players: game.players, lastAction: game.lastAction, actionLog: game.actionLog, status: game.status,
           winner: game.winner, finishedAt: game.finishedAt,
           currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false,
           dice: game.dice, lastDiceTotal: game.lastDiceTotal,
@@ -999,33 +1012,33 @@ function handleLanding(game, player, diceTotal, io) {
     // handled by movePlayer passing GO
   } else if (space.type === 'go_to_jail') {
     sendToJail(game, player);
-    game.lastAction = `${player.name} landed on Go To Jail!`;
+    logAction(game, `${player.name} landed on Go To Jail!`);
   } else if (space.type === 'tax') {
-    game.lastAction = `${player.name} landed on ${space.name}. Tax due: $${space.taxAmount}`;
+    logAction(game, `${player.name} landed on ${space.name}. Tax due: $${space.taxAmount}`);
     io.to(player.socketId).emit('tax_due', { amount: space.taxAmount });
   } else if (space.type === 'community_chest' || space.type === 'chance') {
-    game.lastAction = `${player.name} landed on ${space.name}. Draw a card!`;
+    logAction(game, `${player.name} landed on ${space.name}. Draw a card!`);
   } else if (space.type === 'free_parking') {
     if (game.freeParkingPool && game.freeParkingPool > 0) {
       player.cash += game.freeParkingPool;
-      game.lastAction = `${player.name} collected $${game.freeParkingPool} from Free Parking!`;
+      logAction(game, `${player.name} collected $${game.freeParkingPool} from Free Parking!`);
       game.freeParkingPool = 0;
     } else {
-      game.lastAction = `${player.name} is resting at Free Parking`;
+      logAction(game, `${player.name} is resting at Free Parking`);
     }
   } else if (['property', 'railroad', 'utility'].includes(space.type)) {
     const owner = game.players.find(p => p.properties.includes(player.position) && !p.isBankrupt);
     if (owner && owner.id !== player.id) {
       const mortgaged = owner.mortgaged?.includes(player.position);
       if (mortgaged) {
-        game.lastAction = `${player.name} landed on ${space.name} but it's mortgaged — no rent`;
+        logAction(game, `${player.name} landed on ${space.name} but it's mortgaged — no rent`);
       } else {
         const rent = space.type === 'utility' ? calculateRent(player.position, game, diceTotal) : calculateRent(player.position, game);
-        game.lastAction = `${player.name} landed on ${space.name} owned by ${owner.name}. Rent: $${rent}`;
+        logAction(game, `${player.name} landed on ${space.name} owned by ${owner.name}. Rent: $${rent}`);
         io.to(player.socketId).emit('rent_due', { spaceId: player.position, ownerId: owner.id, rent });
       }
     } else if (!owner) {
-      game.lastAction = `${player.name} landed on ${space.name}. Buy for $${space.price} or auction?`;
+      logAction(game, `${player.name} landed on ${space.name}. Buy for $${space.price} or auction?`);
       io.to(player.socketId).emit('property_available', { spaceId: player.position, price: space.price });
     }
   }
@@ -1035,21 +1048,21 @@ function handleCardAction(game, player, card, io) {
   let moved = false;
   if (card.action === 'collect') {
     player.cash += card.value;
-    game.lastAction = `${player.name} drew: ${card.text}`;
+    logAction(game, `${player.name} drew: ${card.text}`);
   } else if (card.action === 'pay') {
     player.cash -= card.value;
     if (card.value > 0) game.freeParkingPool = (game.freeParkingPool || 0) + card.value;
-    game.lastAction = `${player.name} drew: ${card.text}`;
+    logAction(game, `${player.name} drew: ${card.text}`);
   } else if (card.action === 'advance_to_go') {
     player.position = 0;
     player.cash += GO_SALARY;
-    game.lastAction = `${player.name} drew: Advance to GO!`;
+    logAction(game, `${player.name} drew: Advance to GO!`);
     moved = true;
   } else if (card.action === 'advance_to') {
     const target = card.value;
     if (target < player.position) player.cash += GO_SALARY;
     player.position = target;
-    game.lastAction = `${player.name} advanced to ${SPACES[target].name}`;
+    logAction(game, `${player.name} advanced to ${SPACES[target].name}`);
     moved = true;
   } else if (card.action === 'advance_nearest_railroad') {
     const railroads = [5, 15, 25, 35];
@@ -1057,7 +1070,7 @@ function handleCardAction(game, player, card, io) {
     if (player.position > 35) nearest = 5;
     if (nearest < player.position) player.cash += GO_SALARY;
     player.position = nearest;
-    game.lastAction = `${player.name} advanced to ${SPACES[nearest].name}`;
+    logAction(game, `${player.name} advanced to ${SPACES[nearest].name}`);
     moved = true;
   } else if (card.action === 'advance_nearest_utility') {
     const utils = [12, 28];
@@ -1065,7 +1078,7 @@ function handleCardAction(game, player, card, io) {
     if (player.position > 28) nearest = 12;
     if (nearest < player.position) player.cash += GO_SALARY;
     player.position = nearest;
-    game.lastAction = `${player.name} advanced to ${SPACES[nearest].name}`;
+    logAction(game, `${player.name} advanced to ${SPACES[nearest].name}`);
     // Fresh dice roll for utility rent per official rules
     const freshDice = rollDice();
     const freshTotal = freshDice[0] + freshDice[1];
@@ -1073,14 +1086,14 @@ function handleCardAction(game, player, card, io) {
     moved = true;
   } else if (card.action === 'go_back') {
     player.position = (player.position - card.value + 40) % 40;
-    game.lastAction = `${player.name} went back ${card.value} spaces`;
+    logAction(game, `${player.name} went back ${card.value} spaces`);
     moved = true;
   } else if (card.action === 'go_to_jail') {
     sendToJail(game, player);
-    game.lastAction = `${player.name} drew: Go to Jail!`;
+    logAction(game, `${player.name} drew: Go to Jail!`);
   } else if (card.action === 'get_out_of_jail') {
     player.getOutOfJailCards = (player.getOutOfJailCards || 0) + 1;
-    game.lastAction = `${player.name} drew a Get Out of Jail Free card`;
+    logAction(game, `${player.name} drew a Get Out of Jail Free card`);
   } else if (card.action === 'collect_from_all') {
     const otherPlayers = game.players.filter(p => p.id !== player.id && !p.isBankrupt);
     let total = 0;
@@ -1089,7 +1102,7 @@ function handleCardAction(game, player, card, io) {
       total += card.value;
     }
     player.cash += total;
-    game.lastAction = `${player.name} collected $${total} from other players`;
+    logAction(game, `${player.name} collected $${total} from other players`);
   } else if (card.action === 'pay_each') {
     const otherPlayers = game.players.filter(p => p.id !== player.id && !p.isBankrupt);
     let total = 0;
@@ -1098,11 +1111,11 @@ function handleCardAction(game, player, card, io) {
       total += card.value;
     }
     player.cash -= total;
-    game.lastAction = `${player.name} paid $${total} to other players`;
+    logAction(game, `${player.name} paid $${total} to other players`);
   } else if (card.action === 'street_repair') {
     const cost = calculateStreetRepair(player, card.perHouse, card.perHotel);
     player.cash -= cost;
-    game.lastAction = `${player.name} paid $${cost} for street repairs`;
+    logAction(game, `${player.name} paid $${cost} for street repairs`);
   }
   if (moved) {
     handleLanding(game, player, game.lastDiceTotal || 7, io);
@@ -1112,9 +1125,9 @@ function handleCardAction(game, player, card, io) {
 function handleBankruptcy(game, player, creditor, debt, io) {
   const assets = calculateAssets(player);
   if (assets >= debt) {
-    game.lastAction = `${player.name} must sell/mortgage to pay $${debt}`;
+    logAction(game, `${player.name} must sell/mortgage to pay $${debt}`);
     io.to(player.socketId).emit('forced_sell', { debt, creditorId: creditor?.id || null });
-    updateGame(game.roomCode, { lastAction: game.lastAction });
+    updateGame(game.roomCode, { lastAction: game.lastAction, actionLog: game.actionLog });
   } else {
     const totalAssets = player.cash + assets;
     if (creditor) creditor.cash += totalAssets;
@@ -1130,7 +1143,7 @@ function handleBankruptcy(game, player, creditor, debt, io) {
     player.properties = [];
     player.houses = {};
     player.hotels = {};
-    game.lastAction = `${player.name} is bankrupt!`;
+    logAction(game, `${player.name} is bankrupt!`);
     if (checkGameOver(game)) {
       io.to(game.roomCode).emit('game_over', { winner: game.winner });
     }
@@ -1204,7 +1217,7 @@ function execTrade(game, fromPlayer, toPlayer, offer, request) {
       to.mortgaged = [...(to.mortgaged || []), propId];
       const interest = Math.ceil(Math.floor(sp.price / 2) * 0.1);
       to.cash -= interest;
-      game.lastAction += ` (${sp.name} transferred mortgaged — $${interest} interest paid)`;
+      appendAction(game, ` (${sp.name} transferred mortgaged — $${interest} interest paid)`);
     }
   };
   (offer.properties || []).forEach(pid => transferMortgage(pid, fromPlayer, toPlayer));

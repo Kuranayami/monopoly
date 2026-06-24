@@ -461,6 +461,11 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
               padding: '8px 12px',
               paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
             }}>
+              <View style={{ maxHeight: 60, overflow: 'auto', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {(game.actionLog && game.actionLog.length > 0 ? game.actionLog : ['Game started']).slice(-20).map((entry, i) => (
+                  <Text key={i} style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 16 }}>{entry}</Text>
+                ))}
+              </View>
               {gameActions}
               <View style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginTop: 6 }}>
                 {isMyTurn && phase === 'post_roll' && (
@@ -527,9 +532,13 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           </View>
           <PlayerList game={game} playerId={playerId} />
           <View style={{ height: 8 }} />
-          <View style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16 }}>
-            <Text style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>Last Action</Text>
-            <Text style={{ fontSize: 13, color: '#F0F0F0' }}>{game.lastAction || 'Game started'}</Text>
+          <View style={{ background: '#1E1E1E', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', padding: 16, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Text style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>Game Log</Text>
+            <View style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {(game.actionLog && game.actionLog.length > 0 ? game.actionLog : ['Game started']).slice(-50).map((entry, i) => (
+                <Text key={i} style={{ fontSize: 12, color: '#C0C0C0', lineHeight: 18 }}>{entry}</Text>
+              ))}
+            </View>
           </View>
         </>
       )}

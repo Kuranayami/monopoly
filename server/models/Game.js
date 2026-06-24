@@ -28,6 +28,7 @@ const gameSchema = new mongoose.Schema({
   status: { type: String, default: 'waiting' },
   dice: [Number],
   lastAction: String,
+  actionLog: [String],
   freeParkingPool: { type: Number, default: 0 },
   chat: [{
     playerId: String,
