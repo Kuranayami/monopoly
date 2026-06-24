@@ -47,7 +47,7 @@ function SpaceTile({ pos }) {
 
       {/* Label — always faces camera */}
       <Billboard>
-        <Text position={[g.labelCx - g.cx, 0.07, g.labelCz - g.cz]}
+        <Text position={[g.labelCx - g.cx, 0.14, g.labelCz - g.cz]}
           fontSize={nameSize} color="#1a1a1a" anchorX="center" anchorY="middle"
           maxWidth={g.w * 1.4} textAlign="center"
           renderOrder={1} depthWrite={false}>
@@ -58,7 +58,7 @@ function SpaceTile({ pos }) {
       {/* Price */}
       {isProp && space.price > 0 && (
         <Billboard>
-          <Text position={[g.priceCx - g.cx, 0.05, g.priceCz - g.cz]}
+          <Text position={[g.priceCx - g.cx, 0.11, g.priceCz - g.cz]}
             fontSize={priceSize} color="#555" anchorX="center" anchorY="middle"
             renderOrder={1} depthWrite={false}>
             ${space.price}
@@ -114,7 +114,7 @@ function CardDeck({ position, label, color, glowColor }) {
       </mesh>
       {/* Label */}
       <Billboard>
-        <Text position={[0, 0.07, 0.06]} fontSize={0.09}
+        <Text position={[0, 0.12, 0.06]} fontSize={0.09}
           color="#fff" anchorX="center" anchorY="middle" textAlign="center"
           outlineWidth={0.003} outlineColor="#000"
           renderOrder={1} depthWrite={false}>

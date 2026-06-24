@@ -13,7 +13,7 @@ function useTokenHop(pos) {
   return () => {
     if (hopStartRef.current === 0) return 0;
     const elapsed = performance.now() - hopStartRef.current;
-    if (elapsed < 300) return 0.04 * Math.sin((elapsed / 300) * Math.PI);
+    if (elapsed < 300) return 0.08 * Math.sin((elapsed / 300) * Math.PI);
     return 0;
   };
 }
@@ -25,11 +25,12 @@ const TOKEN_COLORS = {
 };
 
 const PEWTER = { metalness: 0.4, roughness: 0.6 };
+const TS = 2; // token size multiplier
 
 // Racecar: Drift, tire smoke, rev
 function RacecarToken({ pos }) {
   const groupRef = useRef(null);
-  const [wx, wy, wz] = posToWorld(pos);
+  const [wx, wy, wz] = posToWorld(pos, 0.08);
   const smokeRef = useRef(null);
   const getHop = useTokenHop(pos);
   const smokeParticles = useMemo(() => {
@@ -65,7 +66,7 @@ function RacecarToken({ pos }) {
   });
 
   return (
-    <group ref={groupRef} position={[wx, wy, wz]}>
+    <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
       {/* Body — low, sleek 1930s silhouette */}
       <mesh castShadow>
         <boxGeometry args={[0.16, 0.03, 0.07]} />
@@ -132,10 +133,10 @@ function TopHatToken({ pos }) {
     groupRef.current.rotation.z = 0.04 * Math.sin(t * 1.5);
   });
 
-  const [wx, wy, wz] = posToWorld(pos);
+  const [wx, wy, wz] = posToWorld(pos, 0.08);
 
   return (
-    <group ref={groupRef} position={[wx, wy, wz]}>
+    <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
       {/* Hat brim — curved */}
       <mesh rotation={[Math.PI/2, 0, 0]} castShadow>
         <ringGeometry args={[0.03, 0.085, 16]} />
@@ -173,10 +174,10 @@ function BattleshipToken({ pos }) {
     }
   });
 
-  const [wx, wy, wz] = posToWorld(pos);
+  const [wx, wy, wz] = posToWorld(pos, 0.08);
 
   return (
-    <group ref={groupRef} position={[wx, wy, wz]}>
+    <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
       {/* Hull */}
       <mesh castShadow>
         <boxGeometry args={[0.14, 0.03, 0.06]} />
@@ -225,7 +226,7 @@ function BattleshipToken({ pos }) {
 function ThimbleToken({ pos }) {
   const groupRef = useRef(null);
   const getHop = useTokenHop(pos);
-  const [wx, wy, wz] = posToWorld(pos);
+  const [wx, wy, wz] = posToWorld(pos, 0.08);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
@@ -233,7 +234,7 @@ function ThimbleToken({ pos }) {
   });
 
   return (
-    <group ref={groupRef} position={[wx, wy, wz]}>
+    <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
       <mesh castShadow>
         <cylinderGeometry args={[0.04, 0.045, 0.055, 10]} />
         <meshStandardMaterial color={TOKEN_COLORS.thimble} {...PEWTER} />
@@ -260,7 +261,7 @@ function ThimbleToken({ pos }) {
 function GenericToken({ token, color, pos }) {
   const groupRef = useRef(null);
   const getHop = useTokenHop(pos);
-  const [wx, wy, wz] = posToWorld(pos);
+  const [wx, wy, wz] = posToWorld(pos, 0.08);
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
@@ -268,7 +269,7 @@ function GenericToken({ token, color, pos }) {
   });
 
   return (
-    <group ref={groupRef} position={[wx, wy, wz]}>
+    <group ref={groupRef} position={[wx, wy, wz]} scale={TS}>
       <mesh castShadow>
         <cylinderGeometry args={[0.06, 0.08, 0.04, 8]} />
         <meshStandardMaterial color={color} {...PEWTER} />
