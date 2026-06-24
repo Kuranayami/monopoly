@@ -75,8 +75,8 @@ const FACE_ROTATIONS = {
   left:  [0, 0,  Math.PI / 2],
   up:    [0, 0, 0],
   down:  [Math.PI, 0, 0],
-  front: [Math.PI / 2, 0, 0],
-  back:  [-Math.PI / 2, 0, 0],
+  front: [-Math.PI / 2, 0, 0],
+  back:  [Math.PI / 2, 0, 0],
 };
 
 function getMaterials(layoutIdx) {
