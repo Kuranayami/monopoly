@@ -101,7 +101,8 @@ function SpaceTile({ pos }) {
         <NonPropIcon type={space.type} g={g} />
       )}
 
-      {/* Label */}
+      {/* Label (skipped for GO since GOIndicator handles it) */}
+      {pos !== 0 && (
       <Billboard position={[g.labelCx - g.cx, 0.18, g.labelCz - g.cz]}>
         <Text position={[0, 0, 0]}
           fontSize={nameSize} color="#1a1a1a" anchorX="center" anchorY="middle"
@@ -111,6 +112,7 @@ function SpaceTile({ pos }) {
           {space.name}
         </Text>
       </Billboard>
+      )}
 
       {/* Price */}
       {isProp && space.price > 0 && (
