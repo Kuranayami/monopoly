@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RigidBody } from '@react-three/rapier';
@@ -121,8 +121,7 @@ function DiceLightTrail({ position, active }) {
 
 export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles, isSpeeding }) {
   const rigidRef = useRef(null);
-  const launchedRef = useRef(false);
-  const snapTimerRef = useRef(null);
+  const launchTimeRef = useRef(null);
   const pendingValueRef = useRef(null);
   const glowRef = useRef(null);
 
@@ -130,68 +129,65 @@ export default function Dice3D({ diceLayout = 0, targetValue, launch, isDoubles,
   const _euler = new THREE.Euler();
   const _quat = new THREE.Quaternion();
 
-  // Effect 1: launch + value tracking (runs when any dep changes)
-  useEffect(() => {
-    if (!rigidRef.current) return;
-    if (!launch) {
-      launchedRef.current = false;
-      pendingValueRef.current = null;
-      return;
-    }
-    if (!launchedRef.current) {
-      // Rising edge of launch → do physics launch once
-      launchedRef.current = true;
-      pendingValueRef.current = targetValue;
-      const body = rigidRef.current;
-      const spinX = (Math.random() - 0.5) * 12;
-      const spinY = (Math.random() - 0.5) * 12;
-      const spinZ = (Math.random() - 0.5) * 12;
-      body.setTranslation({ x: 0, y: 2.5, z: 3 });
-      body.setLinvel({
-        x: (Math.random() - 0.5) * 4,
-        y: -5 + (Math.random() - 0.5) * 2,
-        z: -7 + (Math.random() - 0.5) * 2,
-      });
-      body.setAngvel({ x: spinX, y: spinY, z: spinZ });
-      body.wakeUp();
-    } else if (targetValue) {
-      // Already launched — update value (may arrive after launch)
-      pendingValueRef.current = targetValue;
-    }
-  }, [launch, targetValue, diceLayout]);
-
-  // Effect 2: snap timer — only depends on `launch`,
-  // so targetValue changes don't cancel/reschedule the timer
+  // On launch → start physics, record launch time + target value
   useEffect(() => {
     if (!launch || !rigidRef.current) return;
-    // Cancel any leftover timer from previous roll
-    if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); }
-
-    snapTimerRef.current = setTimeout(() => {
-      if (!rigidRef.current) return;
-      const val = pendingValueRef.current;
-      if (!val) return;
-      const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
-      let face = 'up';
-      for (const [f, v] of Object.entries(layout)) {
-        if (v === val) { face = f; break; }
-      }
-      const rot = FACE_ROTATIONS[face] || [0, 0, 0];
-      _euler.set(rot[0], rot[1], rot[2], 'XYZ');
-      _quat.setFromEuler(_euler);
-      rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
-      rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
-      rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
-      rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
-      rigidRef.current.sleep();
-    }, 900);
-
-    return () => {
-      if (snapTimerRef.current) { clearTimeout(snapTimerRef.current); snapTimerRef.current = null; }
-    };
+    if (launchTimeRef.current !== null) return; // already launched this cycle
+    launchTimeRef.current = performance.now();
+    pendingValueRef.current = targetValue;
+    const body = rigidRef.current;
+    const spinX = (Math.random() - 0.5) * 12;
+    const spinY = (Math.random() - 0.5) * 12;
+    const spinZ = (Math.random() - 0.5) * 12;
+    body.setTranslation({ x: 0, y: 2.5, z: 3 });
+    body.setLinvel({
+      x: (Math.random() - 0.5) * 4,
+      y: -5 + (Math.random() - 0.5) * 2,
+      z: -7 + (Math.random() - 0.5) * 2,
+    });
+    body.setAngvel({ x: spinX, y: spinY, z: spinZ });
+    body.wakeUp();
   }, [launch]);
 
-  useFrame((_, delta) => {
+  // Reset when roll cycle ends
+  useEffect(() => {
+    if (launch || targetValue) return;
+    launchTimeRef.current = null;
+    pendingValueRef.current = null;
+  }, [launch, targetValue]);
+
+  // Keep pending value updated if it arrives after launch
+  useEffect(() => {
+    if (targetValue) pendingValueRef.current = targetValue;
+  }, [targetValue]);
+
+  // Each frame: snap when 900ms has passed since launch
+  const snapBody = useCallback(() => {
+    if (!launchTimeRef.current || !rigidRef.current) return;
+    if (performance.now() - launchTimeRef.current < 900) return;
+    const val = pendingValueRef.current;
+    if (!val) return;
+    const layout = DICE_LAYOUTS[diceLayout] || DICE_LAYOUTS[0];
+    let face = 'up';
+    for (const [f, v] of Object.entries(layout)) {
+      if (v === val) { face = f; break; }
+    }
+    const rot = FACE_ROTATIONS[face] || [0, 0, 0];
+    _euler.set(rot[0], rot[1], rot[2], 'XYZ');
+    _quat.setFromEuler(_euler);
+    rigidRef.current.setTranslation({ x: 0, y: 0.15, z: -1.5 });
+    rigidRef.current.setRotation({ x: _quat.x, y: _quat.y, z: _quat.z, w: _quat.w });
+    rigidRef.current.setLinvel({ x: 0, y: 0, z: 0 });
+    rigidRef.current.setAngvel({ x: 0, y: 0, z: 0 });
+    rigidRef.current.sleep();
+    launchTimeRef.current = null;
+  }, [diceLayout]);
+
+  useFrame(() => {
+    snapBody();
+  });
+
+  useFrame(() => {
     if (glowRef.current) {
       const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.005);
       glowRef.current.material.opacity = isDoubles ? 0.3 + 0.3 * pulse : isSpeeding ? 0.4 + 0.4 * pulse : 0;

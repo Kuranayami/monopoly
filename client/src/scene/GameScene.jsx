@@ -120,7 +120,15 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           canvasRef.current = gl.domElement;
           gl.domElement.addEventListener('webglcontextlost', (e) => {
             e.preventDefault();
+            // Schedule restore to prevent R3F reconciler from crashing
+            setTimeout(() => {
+              try { gl.forceContextRestore?.(); } catch (_) {}
+            }, 100);
           });
+        }}
+        onError={(e) => {
+          // Suppress R3F reconciler errors during context loss recovery
+          if (e?.message?.includes('Node cannot be found') || e?.message?.includes('310')) return;
         }}
       >
         <Suspense fallback={null}>
