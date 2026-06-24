@@ -207,7 +207,7 @@ function CardDeck({ position, label, color, glowColor }) {
       <mesh ref={glowRef} position={[0, 0.01, 0]}>
         <planeGeometry args={[1.8, 1.4]} />
         <meshBasicMaterial color={glowColor || color} transparent opacity={0.06}
-          depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+          depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -226,8 +226,8 @@ function CornerGlow({ pos }) {
   return (
     <mesh ref={ref} position={[g.cx, 0.008, g.cz]}>
       <planeGeometry args={[CORNER * 0.7, CORNER * 0.7]} />
-      <meshBasicMaterial color="#FFD700" transparent opacity={0.05}
-        depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#FFD700" transparent opacity={0.05}
+          depthWrite={false} blending={THREE.AdditiveBlending} />
     </mesh>
   );
 }

@@ -4,6 +4,7 @@ import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { SPACES } from 'shared/constants.js';
+import { BOARD, CORNER } from './boardLayout.js';
 import Board3D from './Board3D.jsx';
 import Dice3D from './Dice3D.jsx';
 import Token3D from './Token3D.jsx';
@@ -79,6 +80,21 @@ function BoardCollider() {
     <RigidBody type="fixed" position={[0, -0.04, 0]}>
       <CuboidCollider args={[5.5, 0.02, 5.5]} />
     </RigidBody>
+  );
+}
+
+const _pos = (BOARD - 2 * CORNER) * 0.22;
+
+function CardDeckColliders() {
+  return (
+    <group>
+      <RigidBody type="fixed" position={[-_pos, 0.03, -_pos]}>
+        <CuboidCollider args={[0.65, 0.03, 0.475]} rotation={[0, Math.PI / 4, 0]} />
+      </RigidBody>
+      <RigidBody type="fixed" position={[_pos, 0.03, _pos]}>
+        <CuboidCollider args={[0.65, 0.03, 0.475]} rotation={[0, Math.PI / 4, 0]} />
+      </RigidBody>
+    </group>
   );
 }
 
@@ -165,6 +181,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           <Physics gravity={[0, -15, 0]}>
             <Board3D game={game} />
             <BoardCollider />
+            <CardDeckColliders />
             <Dice3D key={`d0-${rollKey}`} diceLayout={0} targetValue={safeDice?.[0]}
               launch={launchDice} isDoubles={isDoubles} isSpeeding={isSpeeding} />
             <Dice3D key={`d1-${rollKey}`} diceLayout={1} targetValue={safeDice?.[1]}
@@ -180,7 +197,7 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
           ))}
 
           <CinematicEvents cinematicEvent={cinematicEvent} />
-          <ContactShadows opacity={0.3} blur={2} far={1} resolution={256} />
+          <ContactShadows opacity={0.25} blur={4} far={2} resolution={1024} />
           <CameraController phase={camPhase} controlsRef={controlsRef} />
           <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true}
             minDistance={4} maxDistance={18}
