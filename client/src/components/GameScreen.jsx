@@ -556,7 +556,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             }}>
               <View style={{ maxHeight: 60, overflow: 'auto', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {(game.actionLog || ['Game started']).slice(-20).filter(Boolean).map((entry, i) => (
-                  <Text key={i} style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 14 }}>{entry}</Text>
+                  <Text key={i} style={{ fontSize: 11, color: '#A0A0A0', lineHeight: 1.1, padding: 0, margin: 0 }}>{entry}</Text>
                 ))}
               </View>
               {gameActions}
@@ -638,7 +638,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
             <Text style={{ fontSize: 12, color: '#A0A0A0', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>Game Log</Text>
               <View style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {(game.actionLog || ['Game started']).slice(-50).filter(Boolean).map((entry, i) => (
-                  <Text key={i} style={{ fontSize: 12, color: '#C0C0C0', lineHeight: 16 }}>{entry}</Text>
+                  <Text key={i} style={{ fontSize: 12, color: '#C0C0C0', lineHeight: 1.2, padding: 0, margin: 0 }}>{entry}</Text>
                 ))}
               </View>
           </View>
