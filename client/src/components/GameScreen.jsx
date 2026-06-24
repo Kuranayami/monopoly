@@ -388,6 +388,14 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           Draw Card
         </Button>
       )}
+      <Button onPress={() => setUse3d(v => !v)}
+        style={{
+          padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+          background: use3d ? '#3B82F6' : '#1E1E1E',
+          color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.1)',
+        }}>
+        {use3d ? '2D' : '3D'}
+      </Button>
     </View>
   );
 
@@ -521,22 +529,24 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           </View>
         ) : (
           <>
+{use3d ? (
+            <View style={{ flex: 1, overflow: 'hidden' }}>
+              <Suspense fallback={<View style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
+                <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
+              </Suspense>
+            </View>
+          ) : (
             <View style={{ height: 'calc(100dvh - 200px)', overflow: 'hidden' }}>
               <ZoomBoard>
                 <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0' }}>
-{use3d ? (
-                  <Suspense fallback={<View style={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
-                    <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
-                  </Suspense>
-                ) : (
                   <Board game={game} playerId={playerId} cellSize={cellSize} dice={game?.dice} rolling={rolling} animState={animState} />
-                )}
                   <View style={{ padding: '0 12px' }}>
                     <PlayerList game={game} playerId={playerId} />
                   </View>
                 </View>
               </ZoomBoard>
             </View>
+          )}
 
             <View style={{
               background: '#1E1E1E', backdropFilter: 'blur(20px)',
@@ -635,18 +645,20 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
         </>
       )}
 
-      <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden' }}>
 {use3d ? (
-          <Suspense fallback={<View style={{ width: '100%', height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
+        <View style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Suspense fallback={<View style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#666' }}>Loading 3D...</Text></View>}>
             <GameScene game={game} playerId={playerId} rolling={rolling} dice={game?.dice} animState={animState} cinematicEvent={cinematicEvent} />
           </Suspense>
-        ) : (
+          {gameActions}
+        </View>
+      ) : (
+        <View style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, overflow: 'hidden' }}>
           <ZoomBoard>
             <Board game={game} playerId={playerId} cellSize={cellSize}
                   dice={game?.dice} rolling={rolling} animState={animState} />
           </ZoomBoard>
-        )}
-        {gameActions}
+          {gameActions}
         <View style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           {isMyTurn && phase === 'post_roll' && (
             <Button onPress={handleBuyProperty} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>Buy Property</Button>
@@ -655,6 +667,7 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
           <Button onPress={() => setTradeModal(true)} style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#1E1E1E', color: '#F0F0F0', border: '1px solid rgba(255,255,255,0.06)' }}>Trade</Button>
         </View>
       </View>
+      )}
 
       {sidePanel(
         <>
