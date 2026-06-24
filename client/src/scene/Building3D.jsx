@@ -4,12 +4,29 @@ import * as THREE from 'three';
 import { SPACES, GRID_POSITIONS, GRID_SIZE } from 'shared/constants.js';
 
 const BOARD_SIZE = 10;
-const gw = BOARD_SIZE / GRID_SIZE;
+const CELL = BOARD_SIZE / GRID_SIZE;
+const HALF = (GRID_SIZE - 1) / 2;
+const W = 0.85;
+const D = 0.3;
+
+function getTileOffset(x, y) {
+  const isCorner = (x === 0 || x === 10) && (y === 0 || y === 10);
+  const edge = x === 0 ? 'left' : x === 10 ? 'right' : y === 0 ? 'top' : y === 10 ? 'bottom' : 'center';
+  let ox = 0, oz = 0;
+  if (!isCorner) {
+    if (edge === 'bottom') oz = CELL / 2 - D / 2;
+    else if (edge === 'top') oz = -(CELL / 2 - D / 2);
+    else if (edge === 'right') ox = CELL / 2 - D / 2;
+    else if (edge === 'left') ox = -(CELL / 2 - D / 2);
+  }
+  return [ox, oz];
+}
 
 function posToWorld(pos) {
   const gp = GRID_POSITIONS.find(p => p.pos === pos);
   if (!gp) return [0, 0, 0];
-  return [(gp.x - (GRID_SIZE - 1) / 2) * gw, 0, (gp.y - (GRID_SIZE - 1) / 2) * gw];
+  const [ox, oz] = getTileOffset(gp.x, gp.y);
+  return [(gp.x - HALF) * CELL + ox, 0, (gp.y - HALF) * CELL + oz];
 }
 
 // Single house with construction animation

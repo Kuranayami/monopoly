@@ -9,7 +9,7 @@ const DOUBLES_POS = new THREE.Vector3(0, 3, 2);
 const SPEEDING_POS = new THREE.Vector3(0, 8, 0);
 const JAIL_POS = new THREE.Vector3(0, 2, 4);
 
-export default function CameraController({ phase }) {
+export default function CameraController({ phase, controlsRef }) {
   const { camera } = useThree();
   const s = useRef({ progress: 1, fromPos: DEFAULT_POS.clone(), toPos: DEFAULT_POS.clone() });
   const initialized = useRef(false);
@@ -23,6 +23,10 @@ export default function CameraController({ phase }) {
   }
 
   useEffect(() => {
+    if (controlsRef?.current) {
+      controlsRef.current.enabled = (phase === 'idle');
+    }
+    if (phase === 'idle') return;
     const target = (() => {
       switch (phase) {
         case 'throw': return THROW_POS;
@@ -37,7 +41,7 @@ export default function CameraController({ phase }) {
     s.current.toPos.copy(target);
     s.current.progress = 0;
     if (phase === 'speeding') speedOrbitRef.current = 0;
-  }, [phase, camera]);
+  }, [phase, camera, controlsRef]);
 
   useFrame((_, delta) => {
     if (phase === 'speeding') {

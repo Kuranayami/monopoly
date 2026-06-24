@@ -1,7 +1,7 @@
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier';
-import { ContactShadows } from '@react-three/drei';
+import { ContactShadows, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { SPACES } from 'shared/constants.js';
 import Board3D from './Board3D.jsx';
@@ -46,6 +46,7 @@ function getWeatherState(game) {
 }
 
 export default function GameScene({ game, playerId, rolling, dice, animState, cinematicEvent, visualPositions = {} }) {
+  const controlsRef = useRef(null);
   const [camPhase, setCamPhase] = useState('idle');
   const [launchDice, setLaunchDice] = useState(false);
   const [landingPos, setLandingPos] = useState(null);
@@ -107,7 +108,11 @@ export default function GameScene({ game, playerId, rolling, dice, animState, ci
 
           <CinematicEvents cinematicEvent={cinematicEvent} />
           <ContactShadows opacity={0.3} blur={2} far={1} resolution={256} />
-          <CameraController phase={camPhase} />
+          <CameraController phase={camPhase} controlsRef={controlsRef} />
+          <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true}
+            minDistance={4} maxDistance={18}
+            maxPolarAngle={Math.PI / 2.1}
+            target={[0, 0, 0]} />
         </Suspense>
       </Canvas>
     </div>
