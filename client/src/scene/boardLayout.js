@@ -13,9 +13,9 @@ const HALF_SPACE = SPACE / 2;
 const HALF_TRACK = TRACK / 2;
 
 // Returns world position [x, y, z] for a board position index 0–39
-export function posToWorld(pos) {
+export function posToWorld(pos, yOffset = 0.035) {
   const g = getSpaceGeometry(pos);
-  return [g.cx, 0, g.cz];
+  return [g.cx, yOffset, g.cz];
 }
 
 /**
