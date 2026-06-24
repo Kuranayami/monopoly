@@ -2,6 +2,83 @@ import { SPACES, TOKENS, COMMUNITY_CHEST, CHANCE, STARTING_CASH, GO_SALARY, JAIL
 import { rollDice, isDoubles, movePlayer, calculateRent, canBuildHouse, canBuildHotel, canSellHouse, calculateStreetRepair, calculateAssets, findNextActivePlayer, checkGameOver, playerOwnsFullGroup } from './gameLogic.js';
 import { createGame, getGame, updateGame, listGames } from './store.js';
 
+function hasSellableAssets(player) {
+  if (!player) return false;
+  const mortgaged = player.mortgaged || [];
+  const hasUnmortgagedProps = (player.properties || []).some(pid => !mortgaged.includes(pid));
+  const hasBuildings = Object.values(player.houses || {}).some(v => v > 0)
+    || Object.values(player.hotels || {}).some(v => v);
+  return hasUnmortgagedProps || hasBuildings;
+}
+
+async function resolveDebt(game, player, io) {
+  if (!player.owes || player.owes <= 0) return false;
+  if (player.cash < player.owes) {
+    if (!hasSellableAssets(player)) {
+      // Auto-bankrupt
+      const owner = player.creditorId ? game.players.find(p => p.id === player.creditorId) : null;
+      player.isBankrupt = true;
+      if (owner) {
+        player.properties.forEach(pid => {
+          if (!owner.properties.includes(pid)) owner.properties.push(pid);
+        });
+        Object.entries(player.houses || {}).forEach(([k, v]) => { owner.houses[k] = (owner.houses[k] || 0) + v; });
+        Object.entries(player.hotels || {}).forEach(([k, v]) => { if (v) owner.hotels[k] = true; });
+        owner.cash += player.cash;
+      }
+      if (!player.creditorId) {
+        game.freeParkingPool = (game.freeParkingPool || 0) + player.cash;
+      }
+      player.cash = 0;
+      player.properties = [];
+      player.houses = {};
+      player.hotels = {};
+      player.owes = 0;
+      player.creditorId = null;
+      game.lastAction = `${player.name} couldn't raise enough funds and is bankrupt!`;
+      if (checkGameOver(game)) {
+        await updateGame(game.roomCode, game);
+        io.to(game.roomCode).emit('game_over', { winner: game.winner });
+      } else {
+        const nextIdx = findNextActivePlayer(game, game.currentTurn);
+        game.currentTurn = nextIdx;
+        game.turnPhase = 'pre_roll';
+        game.canRollAgain = false;
+        game.dice = [];
+        game.lastDiceTotal = null;
+        game.players.forEach(p => { p.paidRentThisTurn = false; });
+        game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+        await updateGame(game.roomCode, game);
+        io.to(game.roomCode).emit('game_updated', await getGame(game.roomCode));
+      }
+      return true;
+    }
+    return false;
+  }
+  // Debt resolved
+  player.cash -= player.owes;
+  if (player.creditorId) {
+    const owner = game.players.find(p => p.id === player.creditorId);
+    if (owner) owner.cash += player.owes;
+  } else {
+    game.freeParkingPool = (game.freeParkingPool || 0) + player.owes;
+  }
+  game.lastAction += ` and resolved their debt`;
+  player.owes = 0;
+  player.creditorId = null;
+  const nextIdx = findNextActivePlayer(game, game.currentTurn);
+  game.currentTurn = nextIdx;
+  game.turnPhase = 'pre_roll';
+  game.canRollAgain = false;
+  game.dice = [];
+  game.lastDiceTotal = null;
+  game.players.forEach(p => { p.paidRentThisTurn = false; });
+  game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
+  await updateGame(game.roomCode, game);
+  io.to(game.roomCode).emit('game_updated', await getGame(game.roomCode));
+  return true;
+}
+
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -487,31 +564,14 @@ export default function socketHandler(io) {
         if (!owner) return callback({ success: false, error: 'No owner' });
 
         player.paidRentThisTurn = true;
-        player.cash -= rent;
-        owner.cash += rent;
-        if (player.cash < 0) {
-          owner.cash += player.cash;
-          player.properties.forEach(pid => {
-            if (!owner.properties.includes(pid)) owner.properties.push(pid);
-          });
-          Object.entries(player.houses || {}).forEach(([k, v]) => { owner.houses[k] = (owner.houses[k] || 0) + v; });
-          Object.entries(player.hotels || {}).forEach(([k, v]) => { if (v) owner.hotels[k] = true; });
-          player.properties = [];
-          player.houses = {};
-          player.hotels = {};
-          player.cash = 0;
-          player.isBankrupt = true;
-          game.lastAction = `${player.name} paid $${rent} rent but couldn't afford it and is bankrupt!`;
-          if (!checkGameOver(game)) {
-            const nextIdx = findNextActivePlayer(game, game.currentTurn);
-            game.currentTurn = nextIdx;
-            game.turnPhase = 'pre_roll';
-            game.canRollAgain = false;
-            game.dice = [];
-            game.lastDiceTotal = null;
-            game.players.forEach(p => { p.paidRentThisTurn = false; });
-            game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
-          }
+        const canPayNow = Math.min(rent, player.cash);
+        player.cash -= canPayNow;
+        owner.cash += canPayNow;
+        const owes = rent - canPayNow;
+        if (owes > 0) {
+          player.owes = owes;
+          player.creditorId = owner.id;
+          game.lastAction = `${player.name} paid $${canPayNow} rent but still owes $${owes} — must sell or mortgage`;
         } else {
           game.lastAction = `${player.name} paid $${rent} rent to ${owner.name}`;
         }
@@ -535,29 +595,17 @@ export default function socketHandler(io) {
         const space = SPACES[player.position];
         if (!space || space.type !== 'tax') return typeof callback === 'function' && callback({ success: false, error: 'Not on a tax space' });
 
-        const amount = space.taxAmount;
-        player.cash -= amount;
-        game.freeParkingPool = (game.freeParkingPool || 0) + amount;
-        if (player.cash < 0) {
-          player.properties = [];
-          player.houses = {};
-          player.hotels = {};
-          player.mortgaged = [];
-          player.cash = 0;
-          player.isBankrupt = true;
-          game.lastAction = `${player.name} couldn't afford the tax and is bankrupt!`;
-          if (!checkGameOver(game)) {
-            const nextIdx = findNextActivePlayer(game, game.currentTurn);
-            game.currentTurn = nextIdx;
-            game.turnPhase = 'pre_roll';
-            game.canRollAgain = false;
-            game.dice = [];
-            game.lastDiceTotal = null;
-            game.players.forEach(p => { p.paidRentThisTurn = false; });
-            game.lastAction += ` ${game.players[nextIdx].name}'s turn`;
-          }
+        const taxAmount = space.taxAmount;
+        const canPayNow = Math.min(taxAmount, player.cash);
+        player.cash -= canPayNow;
+        game.freeParkingPool = (game.freeParkingPool || 0) + canPayNow;
+        const owes = taxAmount - canPayNow;
+        if (owes > 0) {
+          player.owes = owes;
+          player.creditorId = null;
+          game.lastAction = `${player.name} paid $${canPayNow} tax but still owes $${owes} — must sell or mortgage`;
         } else {
-          game.lastAction = `${player.name} paid $${amount} tax`;
+          game.lastAction = `${player.name} paid $${taxAmount} tax`;
         }
         await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, freeParkingPool: game.freeParkingPool, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: false, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
         io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
@@ -620,8 +668,11 @@ export default function socketHandler(io) {
         const current = player.houses?.[spaceId] || 0;
         player.houses = { ...player.houses, [spaceId]: current - 1 };
         game.lastAction = `${player.name} sold a house on ${space.name} for $${refund}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
-        io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
+        if (!debtResolved) {
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: game.canRollAgain, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        }
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
         typeof callback === 'function' && callback({ success: false, error: err.message });
@@ -646,8 +697,11 @@ export default function socketHandler(io) {
         player.cash += mortgageValue;
         player.mortgaged.push(spaceId);
         game.lastAction = `${player.name} mortgaged ${space.name} for $${mortgageValue}`;
-        await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction });
-        io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        const debtResolved = player.owes ? await resolveDebt(game, player, io) : false;
+        if (!debtResolved) {
+          await updateGame(game.roomCode, { players: game.players, lastAction: game.lastAction, status: game.status, winner: game.winner, finishedAt: game.finishedAt, currentTurn: game.currentTurn, turnPhase: game.turnPhase, canRollAgain: game.canRollAgain, dice: game.dice, lastDiceTotal: game.lastDiceTotal });
+          io.to(currentRoom).emit('game_updated', await getGame(currentRoom));
+        }
         callback({ success: true, game: await getGame(currentRoom) });
       } catch (err) {
         typeof callback === 'function' && callback({ success: false, error: err.message });
@@ -836,11 +890,7 @@ export default function socketHandler(io) {
         const player = game.players.find(p => p.id === currentPlayerId);
         if (!player) return callback({ success: false, error: 'Player not found' });
 
-        const space = SPACES[player.position];
-        let owner = null;
-        if (space && ['property', 'railroad', 'utility'].includes(space.type)) {
-          owner = game.players.find(p => p.properties.includes(player.position) && !p.isBankrupt);
-        }
+        let owner = player.creditorId ? game.players.find(p => p.id === player.creditorId) : null;
 
         player.isBankrupt = true;
         if (owner) {
@@ -855,6 +905,8 @@ export default function socketHandler(io) {
         player.properties = [];
         player.houses = {};
         player.hotels = {};
+        player.owes = 0;
+        player.creditorId = null;
 
         game.lastAction = `${player.name} declared bankruptcy!`;
         if (checkGameOver(game)) {

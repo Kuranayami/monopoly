@@ -170,15 +170,32 @@ export function AuctionModal({ auction, game, playerId, socket }) {
   );
 }
 
+function hasSellableAssets(player) {
+  if (!player) return false;
+  const mortgaged = player.mortgaged || [];
+  const hasUnmortgagedProps = (player.properties || []).some(pid => !mortgaged.includes(pid));
+  const hasBuildings = Object.values(player.houses || {}).some(v => v > 0)
+    || Object.values(player.hotels || {}).some(v => v);
+  return hasUnmortgagedProps || hasBuildings;
+}
+
 export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, isTax, amount, onOpenBuildings }) {
   const [confirming, setConfirming] = useState(false);
   const payAmount = amount || rent;
   const space = SPACES[spaceId];
   const player = game?.players?.find(p => p.id === playerId);
   if (!player) return null;
+  if (game?.turnPhase !== 'post_roll') return null;
+  if (player.paidRentThisTurn && !player.owes) return null;
 
   const creditor = !isTax && space && ['property', 'railroad', 'utility'].includes(space.type)
     ? game?.players?.find(p => p.properties.includes(spaceId) && !p.isBankrupt) : null;
+  const canPay = player.cash >= payAmount;
+  const hasAssets = hasSellableAssets(player);
+
+  useEffect(() => {
+    if (!canPay && !hasAssets && !confirming) setConfirming(true);
+  }, [canPay, hasAssets, confirming]);
 
   if (confirming) {
     return (
@@ -193,9 +210,11 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
             Declare Bankruptcy?
           </Text>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 16, lineHeight: 1.5 }}>
-            {creditor
-              ? `All your properties and cash will go to ${creditor.name}. You will be out of the game.`
-              : 'All your properties will go to the bank. You will be out of the game.'}
+            {!canPay && !hasAssets
+              ? "You don't have enough cash and no properties to sell or mortgage."
+              : (creditor
+                ? `All your properties and cash will go to ${creditor.name}. You will be out of the game.`
+                : 'All your properties will go to the bank. You will be out of the game.')}
           </Text>
           <View style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
             <Button onPress={() => { setConfirming(false); onBankrupt(); }}
@@ -235,7 +254,7 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
           Your cash: ${player.cash}
         </Text>
         <View style={{ display: 'flex', gap: 8 }}>
-          {(player.cash >= payAmount) && (
+          {canPay && (
             <Button onPress={onPay}
               style={{
                 width: '100%', padding: '12px', borderRadius: 12, fontSize: 14, fontWeight: 700,
@@ -243,6 +262,19 @@ export function RentModal({ spaceId, rent, onPay, onBankrupt, game, playerId, is
               }}>
               Pay ${payAmount}
             </Button>
+          )}
+          {!canPay && (
+            <View style={{ textAlign: 'center', padding: '8px 0' }}>
+              {hasAssets ? (
+                <Text style={{ fontSize: 13, color: '#f59e0b', marginBottom: 8 }}>
+                  You're short ${payAmount - player.cash}. Sell or mortgage properties below.
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 13, color: '#ef4444', marginBottom: 8 }}>
+                  You can't afford this and have nothing to sell.
+                </Text>
+              )}
+            </View>
           )}
           {onOpenBuildings && (
             <Button onPress={onOpenBuildings}

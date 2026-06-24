@@ -97,6 +97,10 @@ export default function GameScreen({ socket, game, playerId, onLeave, showNotif 
     }
   }, [player?.position, isMyTurn, phase]);
 
+  useEffect(() => {
+    if (phase !== 'post_roll') setRentModal(null);
+  }, [phase]);
+
   const cellSize = 72;
 
   const handleRoll = useCallback(() => {
